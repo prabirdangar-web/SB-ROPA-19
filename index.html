@@ -21,7 +21,7 @@
         }
 
         .container {
-            max-width: 1450px;
+            max-width: 1300px;
             margin: 0 auto;
             background: #fff;
             padding: 25px;
@@ -36,34 +36,11 @@
             margin-top: 0;
         }
 
-        .main-layout {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 25px;
-            margin-top: 20px;
-        }
-
-        @media (max-width: 1024px) {
-            .main-layout { grid-template-columns: 1fr; }
-        }
-
-        .panel-left {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .panel-right {
-            background: #ffffff;
-            border-left: 2px solid #e2e8f0;
-            padding-left: 20px;
-        }
-
         .grid-inputs {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
 
         .form-group {
@@ -109,7 +86,7 @@
             padding: 12px;
             border-left: 4px solid var(--secondary-color);
             border-radius: 4px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             font-weight: 500;
             font-size: 0.9rem;
         }
@@ -117,7 +94,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.82rem;
+            font-size: 0.85rem;
             margin-top: 10px;
         }
 
@@ -136,19 +113,21 @@
 
         tr:nth-child(even) { background-color: #f8fafc; }
 
-        .rem-slip {
-            background-color: #f8fafc;
-            border: 1px solid #cbd5e1;
-            padding: 5px;
+        .slip-box {
+            background-color: #fdfdfd;
+            border: 1px solid #a1a1aa;
+            padding: 6px 10px;
             margin-top: 4px;
             border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.78rem;
-            color: #1e293b;
-            line-height: 1.3;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            color: #000;
         }
+        .slip-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #e4e4e7; padding: 1px 0; }
+        .slip-bold { font-weight: bold; }
 
         .inline-check { font-weight: 400; display: flex; align-items: center; gap: 6px; }
+
         #printArea { display: none; }
 
         @media print {
@@ -172,7 +151,8 @@
             .sb-main-table { width: 100%; border-collapse: collapse; }
             .sb-main-table th { background-color: #eaeaea !important; border: 1px solid #000 !important; font-size: 0.85rem; padding: 6px; text-align: center; }
             .sb-main-table td { border: 1px solid #000 !important; font-size: 0.85rem; padding: 6px; }
-            .rem-slip { border: 1px solid #000 !important; background: none !important; }
+            .slip-box { border: 1px solid #000 !important; background: none !important; }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
@@ -180,189 +160,232 @@
 
 <div class="container">
     <h2>Unified ROPA Pay Fixation Matrix Dashboard</h2>
-    
-    <div class="main-layout">
-        <div class="panel-left">
-            <div>
-                <h3>1. Staff & Service Details</h3>
-                <div class="grid-inputs">
-                    <div class="form-group">
-                        <label>Name of the School</label>
-                        <input type="text" id="schoolName" value="TALDANGRA FULMATI HIGH SCHOOL [H.S.]">
-                    </div>
-                    <div class="form-group">
-                        <label>Name of the Staff</label>
-                        <input type="text" id="staffName" value="PRABIR KUMAR DANGAR">
-                    </div>
-                    <div class="form-group">
-                        <label>Designation</label>
-                        <input type="text" id="designation" value="Assistant Teacher">
-                    </div>
-                </div>
-                <div class="grid-inputs">
-                    <div class="form-group">
-                        <label>Date of Birth</label>
-                        <input type="date" id="dob" value="1969-04-10" onchange="calculateDOR()">
-                    </div>
-                    <div class="form-group">
-                        <label>Date of Joining (1st Service)</label>
-                        <input type="date" id="doj" value="1990-02-02" onchange="calculateDOR()">
-                    </div>
-                </div>
-                <div class="output-box" id="dorOutput">
-                    <strong>Date of Retirement (DOR):</strong> Loading...
-                </div>
-            </div>
 
-            <div>
-                <h3>2. ROPA-1998 Pre-2006 Fixation</h3>
-                <div class="grid-inputs">
-                    <div class="form-group">
-                        <label class="inline-check">
-                            <input type="checkbox" id="enableRopa98" checked onchange="toggleRopa98Section()"> 
-                            Applicable (Joined 1st service before 01.01.2006)
-                        </label>
-                    </div>
-                </div>
-                <div class="grid-inputs" id="ropa98Fields">
-                    <div class="form-group">
-                        <label>Old Scale (maps to ROPA-2009 GP)</label>
-                        <select id="ropa98Scale">
-                            <option value="1700">GP 1700 (2600-4175)</option>
-                            <option value="1800">GP 1800 (2700-4400)</option>
-                            <option value="2600">GP 2600 (3350-6325)</option>
-                            <option value="2900">GP 2900 (3800-7775)</option>
-                            <option value="4100" selected>GP 4100 (4650-10175)</option>
-                            <option value="4400">GP 4400 (4800-10925)</option>
-                            <option value="4700">GP 4700 (5500-11075)</option>
-                            <option value="4800">GP 4800 (6000-12000)</option>
-                            <option value="5400">GP 5400 (8000-13500)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Date of Option / DOA (ROPA-1998)</label>
-                        <input type="date" id="ropa98OptionDate" value="1996-01-01">
-                    </div>
-                    <div class="form-group">
-                        <label>Initial Basic Pay (ROPA-98 scale)</label>
-                        <input type="number" id="ropa98BasicPay" value="5275">
-                    </div>
-                </div>
-                <div class="grid-inputs" id="ropa98LwpFields">
-                    <div class="form-group">
-                        <label>LWP Days &mdash; Non-Qualifying</label>
-                        <input type="number" id="ropa98LwpDays" value="0" min="0">
-                    </div>
-                    <div class="form-group">
-                        <label>LWP Taken From Date</label>
-                        <input type="date" id="ropa98LwpFromDate">
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <h3>3. ROPA-2009 Notional Fixation</h3>
-                <div class="grid-inputs">
-                    <div class="form-group">
-                        <label class="inline-check">
-                            <input type="checkbox" id="enableRopa09" checked onchange="toggleRopa09Section()"> 
-                            Applicable (Drew pay under ROPA-2009)
-                        </label>
-                    </div>
-                </div>
-                <div class="grid-inputs" id="ropa09Fields">
-                    <div class="form-group" id="ropa09ManualGpGroup">
-                        <label>Grade Pay (ROPA-2009)</label>
-                        <select id="ropa09GradePay">
-                            <option value="1700">GP 1700</option>
-                            <option value="1800">GP 1800</option>
-                            <option value="2600">GP 2600</option>
-                            <option value="2900">GP 2900</option>
-                            <option value="3900">GP 3900</option>
-                            <option value="4100" selected>GP 4100</option>
-                            <option value="4400">GP 4400</option>
-                            <option value="4700">GP 4700</option>
-                            <option value="4800">GP 4800</option>
-                            <option value="5400">GP 5400</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Date of Option / DOA (ROPA-2009)</label>
-                        <input type="date" id="ropa09OptionDate" value="2006-01-01">
-                    </div>
-                    <div class="form-group" id="ropa09ManualBandGroup">
-                        <label>Initial Band Pay (Excluding GP)</label>
-                        <input type="number" id="ropa09BandPay" value="13400">
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <h3>4. ROPA-2019 Matrix Fixation</h3>
-                <div class="grid-inputs">
-                    <div class="form-group">
-                        <label>Date of Option (ROPA-2019)</label>
-                        <input type="date" id="ropa19OptionDate" value="2016-01-01">
-                    </div>
-                </div>
-            </div>
-
-            <div class="btn-group">
-                <button type="button" class="btn-generate" onclick="processFixationTimeline()">Generate Pay Tables</button>
-                <button type="button" class="btn-print" onclick="window.print()">Print Sheet</button>
-            </div>
+    <h3>1. Staff & Service Details</h3>
+    <div class="grid-inputs">
+        <div class="form-group">
+            <label>Name of the School</label>
+            <input type="text" id="schoolName" value="TALDANGRA FULMATI HIGH SCHOOL [H.S.]">
         </div>
-
-        <div class="panel-right">
-            <div id="carryForwardOutput98" class="output-box" style="display:none; background-color:#fff7ed; border-left-color:#c2410c;"></div>
-            <div id="carryForwardOutput" class="output-box" style="display:none;"></div>
-
-            <div id="ropa98Section" style="display:none;">
-                <h3>ROPA-1998 Notional Fixation Timeline (Up to 31-03-2009)</h3>
-                <div class="table-responsive">
-                    <table id="dashboardTable98">
-                        <thead>
-                            <tr>
-                                <th>Effective Date</th><th>Date of Termination</th><th>Scale (&rarr; GP)</th><th>Basic Pay</th><th>Event / Reason / Steps</th>
-                            </tr>
-                        </thead>
-                        <tbody id="payTableBody98">
-                            <tr><td colspan="5" style="text-align: center; color: #64748b; padding: 15px;">Click Generate to populate calculation values.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="ropa09Section">
-                <h3>ROPA-2009 Notional Fixation Timeline (Up to 31-12-2019)</h3>
-                <div class="table-responsive">
-                    <table id="dashboardTable09">
-                        <thead>
-                            <tr>
-                                <th>Effective Date</th><th>Date of Termination</th><th>Pay Band</th><th>Band Pay</th><th>GP</th><th>Basic Pay</th><th>Event / Reason / Steps</th>
-                            </tr>
-                        </thead>
-                        <tbody id="payTableBody09">
-                            <tr><td colspan="7" style="text-align: center; color: #64748b; padding: 15px;">Click Generate to populate calculation values.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <h3>ROPA-2019 Matrix Fixation Timeline (To DOR)</h3>
-            <div class="table-responsive">
-                <table id="dashboardTable19">
-                    <thead>
-                        <tr>
-                            <th>Effective Date</th><th>Date of Termination</th><th>Level Matrix</th><th>Cell</th><th>GP</th><th>Basic Pay</th><th>Event / Reason / Steps</th>
-                        </tr>
-                    </thead>
-                    <tbody id="payTableBody19">
-                        <tr><td colspan="7" style="text-align: center; color: #64748b; padding: 15px;">Click Generate to populate calculation values.</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <div class="form-group">
+            <label>Name of the Staff</label>
+            <input type="text" id="staffName" value="PRABIR KUMAR DANGAR">
         </div>
+        <div class="form-group">
+            <label>Designation</label>
+            <input type="text" id="designation" value="Assistant Teacher">
+        </div>
+        <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="date" id="dob" value="1969-04-10" onchange="calculateDOR()">
+        </div>
+        <div class="form-group">
+            <label>Date of Joining (1st Service)</label>
+            <input type="date" id="doj" value="2007-10-04" onchange="calculateDOR()">
+        </div>
+    </div>
+
+    <div class="output-box" id="dorOutput">
+        <strong>Date of Retirement (DOR):</strong> Loading...
+    </div>
+
+    <h3>2. ROPA-1998 Pre-2006 Fixation (Always Frozen on 31-03-2009)</h3>
+    <div class="grid-inputs">
+        <div class="form-group">
+            <label>&nbsp;</label>
+            <label class="inline-check"><input type="checkbox" id="enableRopa98" onchange="toggleRopa98Section()"> Applicable (staff joined 1st service before 01.01.2006, drew pay under ROPA-1998)</label>
+        </div>
+    </div>
+    <div class="grid-inputs" id="ropa98Fields" style="display:none;">
+        <div class="form-group">
+            <label>Old Scale (maps to ROPA-2009 Grade Pay)</label>
+            <select id="ropa98Scale">
+                <option value="1700">GP 1700 (2600-4175)</option>
+                <option value="1800">GP 1800 (2700-4400)</option>
+                <option value="2600">GP 2600 (3350-6325)</option>
+                <option value="2900">GP 2900 (3800-7775)</option>
+                <option value="4100">GP 4100 (4650-10175)</option>
+                <option value="4400">GP 4400 (4800-10925)</option>
+                <option value="4700" selected>GP 4700 (5500-11075)</option>
+                <option value="4800">GP 4800 (6000-12000)</option>
+                <option value="5400">GP 5400 (8000-13500)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Date of Option / DOA (ROPA-1998)</label>
+            <input type="date" id="ropa98OptionDate" value="1998-01-01">
+        </div>
+        <div class="form-group">
+            <label>Initial Basic Pay (ROPA-1998 scale)</label>
+            <input type="number" id="ropa98BasicPay" value="5500">
+        </div>
+        <div class="form-group">
+            <label>LWP (Leave Without Pay) Days &mdash; Non-Qualifying</label>
+            <input type="number" id="ropa98LwpDays" value="0" min="0">
+        </div>
+        <div class="form-group">
+            <label>LWP Taken From Date (shifts all subsequent increment/CAS dates)</label>
+            <input type="date" id="ropa98LwpFromDate">
+        </div>
+    </div>
+    <div class="output-box" style="background-color:#fff7ed;border-left-color:#c2410c;">
+        <strong>10/18/20-Year CAS Rule (ROPA-1998 phase):</strong> One additional increment is granted on completion of 10 and 20 years of service (in the same old scale). On completion of 18 years, staff drawing GP 1700 / 2600 / 3900 / 4100 (i.e. eligible for the 18-year scale change 1700&rarr;1800, 2600&rarr;2900, 3900&rarr;4100, 4100&rarr;4400) get one additional increment in the old scale first, and are then placed at the equal/next-higher stage of the new scale, subject to the ROPA-1998 minimum entry pay of the new scale. GP 4700/4800/5400 are not eligible for the 18-year scale change (no higher old-scale mapping exists). If LWP days are entered, every increment/CAS date on or after the "LWP Taken From Date" is deferred by that many days, since dies-non/LWP period does not count towards qualifying service for increment.
+        <br><br><strong>Completed-year (termination) date rule:</strong> if the date of joining is the 1st of a month, a completed year of service falls on that same date N years later. If the date of joining falls anywhere from the 2nd to the last day of a month, that part-month is rounded up as a full qualifying month, so the completed year falls on the <em>last day</em> of the month that is N years after the joining month &mdash; not the exact day-anniversary. From the following year onward this gives a clean 12-month span (1st of that month to the end of the 12th month).
+    </div>
+
+    <h3>3. ROPA-2009 Notional Fixation (Always Frozen on 31-12-2019)</h3>
+    <div class="grid-inputs">
+        <div class="form-group">
+            <label>&nbsp;</label>
+            <label class="inline-check"><input type="checkbox" id="enableRopa09" checked onchange="toggleRopa09Section()"> Applicable (staff drew pay under ROPA-2009 before switching)</label>
+        </div>
+    </div>
+    <div class="grid-inputs" id="ropa09Fields">
+        <div class="form-group" id="ropa09ManualGpGroup">
+            <label>Grade Pay (ROPA-2009)</label>
+            <select id="ropa09GradePay">
+                <option value="1700">GP 1700</option>
+                <option value="1800">GP 1800</option>
+                <option value="2600">GP 2600</option>
+                <option value="2900">GP 2900</option>
+                <option value="3900">GP 3900</option>
+                <option value="4100">GP 4100</option>
+                <option value="4400">GP 4400</option>
+                <option value="4700" selected>GP 4700</option>
+                <option value="4800">GP 4800</option>
+                <option value="5400">GP 5400</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Date of Option / DOA (ROPA-2009)</label>
+            <input type="date" id="ropa09OptionDate" value="2006-01-01">
+        </div>
+        <div class="form-group" id="ropa09ManualBandGroup">
+            <label>Initial Band Pay (Excluding GP)</label>
+            <input type="number" id="ropa09BandPay" value="13400">
+        </div>
+        <div class="form-group">
+            <label>LWP Type (ROPA-2009 phase)</label>
+            <select id="ropa09LwpType">
+                <option value="none" selected>No LWP</option>
+                <option value="medical">Medical Ground (E.O.L.) &mdash; no effect on increment</option>
+                <option value="other">Other / Personal Reason</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>LWP Start Date</label>
+            <input type="date" id="ropa09LwpStart">
+        </div>
+        <div class="form-group">
+            <label>LWP End Date</label>
+            <input type="date" id="ropa09LwpEnd">
+        </div>
+    </div>
+    <div class="output-box" style="background-color:#fff7ed;border-left-color:#c2410c;">
+        <strong>LWP / Notional Increment Rule (G.O. No. 181-SE(B) Dt. 8.10.2009, ROPA-2009 &amp; ROPA-2019 phases):</strong> Extraordinary Leave Without Pay (E.O.L.) on medical grounds does not defer the increment at all. For LWP on any other ground: leave of less than 1 month has no effect. Leave of 1 month or more defers the <em>financial</em> benefit of the increment (the notional 1-July date itself stays fixed and future increment dates continue on the normal cycle): if the LWP period ends before the 1-July date, the financial benefit starts from 1-July plus the number of complete LWP months; if the LWP period is still running on (i.e. spans across) the 1-July date, the financial benefit instead starts from the 1st of the month following the month of rejoining duty, plus the number of complete LWP months. If the LWP runs 12 months or more and swallows the 1-July date entirely, that year's increment is not granted at all and the employee simply resumes on the following year's 1-July cycle.
+    </div>
+
+    <h3>4. ROPA-2019 Matrix Fixation (From Option Date)</h3>
+    <div class="grid-inputs">
+        <div class="form-group">
+            <label>Date of Option (ROPA-2019)</label>
+            <input type="date" id="ropa19OptionDate" value="2016-01-01">
+        </div>
+        <div class="form-group" id="ropa19ManualGpGroup" style="display:none;">
+            <label>Grade Pay (manual - no ROPA-2009 phase)</label>
+            <select id="ropa19GradePayManual">
+                <option value="1700">GP 1700</option>
+                <option value="1800">GP 1800</option>
+                <option value="2600">GP 2600</option>
+                <option value="2900">GP 2900</option>
+                <option value="3900">GP 3900</option>
+                <option value="4100">GP 4100</option>
+                <option value="4400">GP 4400</option>
+                <option value="4700" selected>GP 4700</option>
+                <option value="4800">GP 4800</option>
+                <option value="5400">GP 5400</option>
+            </select>
+        </div>
+        <div class="form-group" id="ropa19ManualBasicGroup" style="display:none;">
+            <label>Basic Pay (manual)</label>
+            <input type="number" id="ropa19BasicPayManual" value="66000">
+        </div>
+        <div class="form-group">
+            <label>LWP Type (ROPA-2019 phase)</label>
+            <select id="ropa19LwpType">
+                <option value="none" selected>No LWP</option>
+                <option value="medical">Medical Ground (E.O.L.) &mdash; no effect on increment</option>
+                <option value="other">Other / Personal Reason</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>LWP Start Date</label>
+            <input type="date" id="ropa19LwpStart">
+        </div>
+        <div class="form-group">
+            <label>LWP End Date</label>
+            <input type="date" id="ropa19LwpEnd">
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button type="button" class="btn-generate" onclick="processFixationTimeline()">Generate Pay Tables</button>
+        <button type="button" class="btn-print" onclick="window.print()">Print Service Book Sheet</button>
+    </div>
+
+    <div class="output-box" id="carryForwardOutput" style="display:none;"></div>
+    <div class="output-box" id="carryForwardOutput98" style="display:none;"></div>
+
+    <div id="ropa98Section" style="display:none;">
+        <h3>Generated ROPA-1998 Notional Fixation Timeline (Up to 31-03-2009)</h3>
+        <div class="table-responsive">
+            <table id="dashboardTable98">
+                <thead>
+                    <tr>
+                        <th>Effective Date</th><th>Date of Termination</th><th>Scale (&rarr; GP)</th><th>Basic Pay</th><th>Event / Reason</th>
+                    </tr>
+                </thead>
+                <tbody id="payTableBody98">
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">Click "Generate Pay Tables" to populate calculation values.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="ropa09Section">
+        <h3>Generated ROPA-2009 Notional Fixation Timeline (Up to 31-12-2019)</h3>
+        <div class="table-responsive">
+            <table id="dashboardTable09">
+                <thead>
+                    <tr>
+                        <th>Effective Date</th><th>Date of Termination</th><th>Scale of Pay / Pay Band</th><th>Band Pay</th><th>Grade Pay</th><th>Basic Pay</th><th>Event / Reason / Steps</th>
+                    </tr>
+                </thead>
+                <tbody id="payTableBody09">
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #64748b; padding: 20px;">Click "Generate Pay Tables" to populate calculation values.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <h3>Generated ROPA-2019 Matrix Fixation Timeline (From Option Date to DOR)</h3>
+    <div class="table-responsive">
+        <table id="dashboardTable19">
+            <thead>
+                <tr>
+                    <th>Effective Date</th><th>Date of Termination</th><th>Scale of Pay / Level Matrix</th><th>Cell</th><th>Grade Pay</th><th>Basic Pay</th><th>Event / Reason / Steps</th>
+                </tr>
+            </thead>
+            <tbody id="payTableBody19">
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #64748b; padding: 20px;">Click "Generate Pay Tables" to populate calculation values.</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -390,7 +413,7 @@
         <table class="sb-main-table" id="sbTable98">
             <thead>
                 <tr>
-                    <th>Effective Date</th><th>Date of Termination</th><th>Scale (&rarr; GP)</th><th>Basic Pay</th><th>Event / Reason / Steps</th>
+                    <th>Effective Date</th><th>Date of Termination</th><th>Scale (&rarr; GP)</th><th>Basic Pay</th><th>Event / Reason</th>
                 </tr>
             </thead>
             <tbody id="sbPrintTableBody98"></tbody>
@@ -421,6 +444,7 @@
 </div>
 
 <script>
+    // Complete Matrix Dataset mapping from PAY_MATRIX.pdf
     const matrixData19 = {
         1: [17000, 17500, 18000, 18500, 19100, 19700, 20300, 20900, 21500, 22100, 22800, 23500, 24200, 24900, 25600, 26400, 27200, 28000, 28800, 29700, 30600, 31500, 32400, 33400, 34400, 35400, 36500, 37600, 38700, 39900, 41100, 42300, 43600],
         2: [17600, 18100, 18600, 19200, 19800, 20400, 21000, 21600, 22200, 22900, 23600, 24300, 25000, 25800, 26600, 27400, 28200, 29000, 29900, 30800, 31700, 32700, 33700, 34700, 35700, 36800, 37900, 39000, 40200, 41400, 42600, 43900, 45200],
@@ -440,17 +464,34 @@
         4800: "PB-4:9000-40500", 5400: "PB-4:9000-40500"
     };
 
+    // "Entry Pay in the revised pay structure for direct recruits appointed on or after
+    // 01.01.2006" (WBS(ROPA) Rules 2009 Schedule). Keyed on Grade Pay -> minimum Pay in the
+    // Pay Band prescribed for a fresh direct recruit on that Grade Pay. When an existing
+    // employee's pay is carried forward from ROPA-1998 into ROPA-2009 by the x1.86 fitment
+    // formula (Rule II), the resulting Pay in the Pay Band can never be fixed below this
+    // minimum entry figure for the Grade Pay concerned — it must be stepped up to at least
+    // this value if the multiplication produces a lower amount.
     const minEntryPayBand09 = {
-        1700: 4900, 1800: 5030, 1900: 5400, 2100: 5580, 2300: 5860, 2600: 6240, 2900: 6700,
-        3200: 7100, 3600: 7440, 3900: 8370, 4100: 8650, 4400: 9000, 4600: 9300, 4700: 10230,
-        4800: 11160, 5400: 15600
+        1700: 4900, 1800: 5030,
+        1900: 5400, 2100: 5580, 2300: 5860, 2600: 6240, 2900: 6700,
+        3200: 7100, 3600: 7440, 3900: 8370, 4100: 8650,
+        4400: 9000, 4600: 9300, 4700: 10230, 4800: 11160,
+        5400: 15600, 6600: 18600, 7000: 18600, 7600: 22320, 8000: 23250
     };
 
-    const pbMap19 = { 1700: "PB-1", 1800: "PB-1", 2600: "PB-2", 2900: "PB-2", 3900: "PB-3", 4100: "PB-3", 4400: "PB-4", 4700: "PB-4", 4800: "PB-4", 5400: "PB-4" };
-    const levelMap19 = { 1700: 1, 1800: 2, 2600: 3, 2900: 7, 3900: 10, 4100: 11, 4400: 12, 4700: 14, 4800: 15, 5400: 16 };
+    const pbMap19 = {
+        1700: "PB-1", 1800: "PB-1", 2600: "PB-2", 2900: "PB-2", 3900: "PB-3", 4100: "PB-3", 4400: "PB-4", 4700: "PB-4", 4800: "PB-4", 5400: "PB-4"
+    };
+
+    const levelMap19 = {
+        1700: 1, 1800: 2, 2600: 3, 2900: 7, 3900: 10, 4100: 11, 4400: 12, 4700: 14, 4800: 15, 5400: 16
+    };
+
     const promoMap09 = { 1700: 1800, 2600: 2900, 3900: 4100, 4100: 4400 };
     const promoMap19 = { 1700: 1800, 2600: 2900, 3900: 4100, 4100: 4400 };
 
+    // ROPA-1998 stepped pay-scale ladders, transcribed from the official scale table.
+    // Each key is the Grade Pay this old scale was mapped to under ROPA-2009.
     const matrixData98 = {
         1700: [2600, 2655, 2710, 2765, 2820, 2875, 2930, 2985, 3045, 3105, 3165, 3225, 3285, 3345, 3405, 3465, 3525, 3590, 3655, 3720, 3785, 3850, 3915, 3980, 4045, 4110, 4175],
         1800: [2700, 2760, 2820, 2880, 2940, 3000, 3060, 3120, 3185, 3250, 3315, 3380, 3445, 3510, 3575, 3640, 3705, 3770, 3840, 3910, 3980, 4050, 4120, 4190, 4260, 4330, 4400],
@@ -463,16 +504,25 @@
         5400: [8000, 8275, 8550, 8825, 9100, 9375, 9650, 9925, 10200, 10475, 10750, 11025, 11300, 11575, 11850, 12125, 12400, 12675, 12950, 13225, 13500]
     };
 
+    // Rule II, WBS(ROPA) Rules 2009 (Notification No. 7220-F dated 23.07.2009):
+    // existing (ROPA-1998) basic pay x 1.86, rounded off to the next multiple of Rs. 10,
+    // gives the Pay in the Pay Band; the Grade Pay corresponding to the old scale is then added.
     const ROPA98_TO_09_FACTOR = 1.86;
-    const ROPA09_CUTOFF = new Date(2019, 11, 31);
-    const ROPA98_CUTOFF = new Date(2009, 2, 31);
 
-    function ceilToNext10(value) { return Math.ceil(value / 10) * 10; }
+    function ceilToNext10(value) {
+        return Math.ceil(value / 10) * 10;
+    }
+
+    // ROPA-2009 timeline is always notionally frozen on this date, regardless of DOR
+    // or of the date the employee actually switched over to ROPA-2019.
+    const ROPA09_CUTOFF = new Date(2019, 11, 31);
+
+    // ROPA-1998 timeline is always notionally frozen on this date, regardless of DOR.
+    const ROPA98_CUTOFF = new Date(2009, 2, 31);
 
     function toggleRopa98Section() {
         const enabled = document.getElementById('enableRopa98').checked;
         document.getElementById('ropa98Fields').style.display = enabled ? '' : 'none';
-        document.getElementById('ropa98LwpFields').style.display = enabled ? '' : 'none';
         document.getElementById('ropa98Section').style.display = enabled ? '' : 'none';
         document.getElementById('sbRopa98Block').style.display = enabled ? '' : 'none';
         document.getElementById('ropa09ManualGpGroup').style.display = enabled ? 'none' : '';
@@ -484,7 +534,9 @@
         document.getElementById('ropa09Fields').style.display = enabled ? '' : 'none';
         document.getElementById('ropa09Section').style.display = enabled ? '' : 'none';
         document.getElementById('sbRopa09Block').style.display = enabled ? '' : 'none';
-        toggleRopa98Section();
+        document.getElementById('ropa19ManualGpGroup').style.display = enabled ? 'none' : '';
+        document.getElementById('ropa19ManualBasicGroup').style.display = enabled ? 'none' : '';
+        toggleRopa98Section(); // keep ROPA-2009 manual-field visibility in sync with the ROPA-1998 checkbox
     }
 
     function getDOR() {
@@ -526,31 +578,116 @@
         return (milestoneDate >= startWinA && milestoneDate <= endWinA) ? 'A' : 'B';
     }
 
-    function generateAnniversaryDate(doj, years) {
-        return new Date(doj.getFullYear() + years, doj.getMonth(), doj.getDate());
+    // Whole completed calendar months between two dates (partial trailing month dropped),
+    // e.g. 1.7.2007 to 8.12.2007 = 5 months; 20.3.2008 to 26.9.2008 = 6 months.
+    function wholeMonthsBetween(start, end) {
+        let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+        if (end.getDate() < start.getDate()) months -= 1;
+        return Math.max(0, months);
     }
 
-    // GAP CORRECTION FIX: Always set termination boundary directly to 1 day before the next effective entry date
+    // LWP / Notional Increment rule per G.O. No. 181-SE(B) Dt. 8.10.2009 (ROPA-2009 & ROPA-2019
+    // phases only). Returns how a single 1-July-cycle increment/CAS event is affected by an
+    // Extraordinary Leave Without Pay (E.O.L.) period entered for the employee:
+    //   - skip: true        -> this cycle's increment is not granted at all (LWP >= 12 months
+    //                          swallowed the 1-July date); caller should omit the event.
+    //   - financialDate     -> date from which the increment's monetary benefit actually starts.
+    //                          The notional 1-July date itself is unchanged, and future 1-July
+    //                          cycle dates are computed independently, so they are unaffected.
+    //   - deferred: true    -> financialDate differs from the notional cycleDate; caller should
+    //                          show a note explaining the deferral.
+    // LWP / Notional Increment rule per G.O. No. 181-SE(B) Dt. 8.10.2009 (ROPA-2009 & ROPA-2019
+    // phases only). Precomputes, ONCE for a given LWP period, which single 1-July increment
+    // cycle it affects and how — every other cycle date (earlier or later) is left untouched,
+    // so a long-past LWP never keeps re-deferring later years.
+    //   - skip: true    -> that cycle's increment is not granted at all (LWP >= 12 months
+    //                      swallowed the 1-July date); caller should omit the event for that year.
+    //   - financialDate -> date from which the increment's monetary benefit actually starts.
+    //                      The notional 1-July date itself is unchanged, and future 1-July
+    //                      cycle dates are computed independently, so they are unaffected.
+    function computeLwpEffect(lwpType, lwpStart, lwpEnd) {
+        if (lwpType !== 'other' || !(lwpStart instanceof Date) || !(lwpEnd instanceof Date) || isNaN(lwpStart) || isNaN(lwpEnd) || lwpEnd < lwpStart) {
+            return null; // no LWP, or medical-ground E.O.L. (no effect on increment)
+        }
+        const months = wholeMonthsBetween(lwpStart, lwpEnd);
+        if (months < 1) return null; // less than 1 month LWP -> no effect
+
+        // The single 1-July cycle this LWP touches: the first 1-July date strictly after the
+        // LWP start (an LWP starting exactly on a 1-July date belongs to that same cycle).
+        let cyc = new Date(lwpStart.getFullYear(), 6, 1);
+        if (cyc <= lwpStart) cyc = new Date(lwpStart.getFullYear() + 1, 6, 1);
+        const spansCycleDate = (lwpStart <= cyc && cyc <= lwpEnd);
+
+        if (months >= 12 && spansCycleDate) {
+            // LWP of 12 months or more that swallows this cycle's 1-July date entirely: this
+            // year's increment is not granted; employee resumes on the next 1-July cycle.
+            return { affectedYear: cyc.getFullYear(), skip: true, deferred: false, financialDate: cyc };
+        }
+        if (spansCycleDate) {
+            // Employee was still on LWP on the 1-July date itself: financial benefit starts
+            // from the 1st of the month AFTER the month duty was resumed, plus the LWP months.
+            let rejoinMonthStart = new Date(lwpEnd.getFullYear(), lwpEnd.getMonth() + 1, 1);
+            let financialDate = new Date(rejoinMonthStart.getFullYear(), rejoinMonthStart.getMonth() + months, 1);
+            return { affectedYear: cyc.getFullYear(), skip: false, deferred: true, financialDate };
+        }
+        // LWP ended before the 1-July date: financial benefit starts from 1-July plus the
+        // LWP months.
+        let financialDate = new Date(cyc.getFullYear(), cyc.getMonth() + months, cyc.getDate());
+        return { affectedYear: cyc.getFullYear(), skip: false, deferred: true, financialDate };
+    }
+
     function finalizeDot(compiledRows, endDate) {
         for (let i = 0; i < compiledRows.length; i++) {
             if (i < compiledRows.length - 1) {
                 let nextRowDate = compiledRows[i + 1].date;
-                let prevDay = new Date(nextRowDate);
-                prevDay.setDate(prevDay.getDate() - 1);
-                compiledRows[i].dot = prevDay;
+                if (compiledRows[i].date.getTime() === nextRowDate.getTime()) {
+                    compiledRows[i].dot = new Date(nextRowDate);
+                } else {
+                    compiledRows[i].dot = new Date(nextRowDate.getFullYear(), nextRowDate.getMonth(), nextRowDate.getDate() - 1);
+                }
             } else {
                 compiledRows[i].dot = endDate;
             }
         }
     }
 
+    // ---- ROPA-1998 notional timeline (always ends at min(DOR, 31-03-2009)) ----
+    // Uses the literal stepped-scale ladder (no percentage formula, no 10/18/20-year
+    // CAS milestones — those were only introduced with effect from 01.01.2006 under
+    // ROPA-2009 and are applied from that phase onward).
+    // ROPA-1998 completed-year (termination/completion) date rule:
+    // If the joining date falls on the 1st of a month, that month already counts as a full
+    // qualifying month, so a completed year of service falls on the SAME date N years later.
+    // If the joining date falls anywhere from the 2nd to the last day of a month, that partial
+    // month is rounded UP and treated as a full qualifying month, so the completed year of
+    // service falls on the LAST DAY of the month that is N years after the month of joining
+    // (not the exact day-anniversary). From the following year onward this naturally produces
+    // a clean 12-month span running from the 1st of that month to the end of the 12th month.
+    function ropa98YearCompletionDate(doj, years) {
+        const targetYear = doj.getFullYear() + years;
+        const month = doj.getMonth();
+        const day = doj.getDate();
+        if (day === 1) {
+            return new Date(targetYear, month, 1);
+        }
+        return new Date(targetYear, month + 1, 0); // day 0 of next month = last day of 'month'
+    }
+
+    // Grade Pays under the old ROPA-1998 stepped scales that carry an 18-year scale-change
+    // benefit: 1700->1800, 2600->2900, 3900->4100, 4100->4400 (uses the same promoMap09
+    // table already used for the ROPA-2009 18-year CAS benefit). GP 4700/4800/5400 have no
+    // higher old-scale mapping in matrixData98, so they are not eligible.
+    const eligibleFor18YScaleChange98 = [1700, 2600, 3900, 4100];
+
     function computeRopa98Timeline(doj, optionDate, scaleKey, initialBasicPay, endDate, lwpDays, lwpFromDate) {
         let ladder = matrixData98[scaleKey] || [];
         let currentScaleKey = scaleKey;
         let events = [];
-        
         function pushEvent(dateObj, data) { events.push({ date: new Date(dateObj), ...data }); }
 
+        // LWP (dies-non) is not counted towards qualifying service for increment purposes.
+        // Every increment / 10-18-20 year CAS date falling on or after the date the LWP was
+        // taken is deferred by the number of LWP days entered.
         const hasLwp = lwpDays > 0 && lwpFromDate instanceof Date && !isNaN(lwpFromDate);
         function applyLwpShift(d) {
             if (hasLwp && d >= lwpFromDate) {
@@ -563,105 +700,139 @@
 
         pushEvent(optionDate, { label: "DOA / PAY FIXATION", isInitial: true });
 
+        const optionMonth = optionDate.getMonth();
+        const isEligible18Y = eligibleFor18YScaleChange98.includes(scaleKey);
+
+        // 10/18/20-year milestone trigger dates: the EXACT anniversary of the Date of Joining
+        // (DOJ) — same month and day, N years later. No month-end rounding on the trigger
+        // itself.
+        let milestoneDefs = [
+            { d: new Date(doj.getFullYear() + 10, doj.getMonth(), doj.getDate()), name: "10 YEARS - ADDL. INCREMENT", type: "10Y" },
+            { d: new Date(doj.getFullYear() + 18, doj.getMonth(), doj.getDate()), name: "18 YEARS - SCALE CHANGE", type: "18Y" },
+            { d: new Date(doj.getFullYear() + 20, doj.getMonth(), doj.getDate()), name: "20 YEARS - ADDL. INCREMENT", type: "20Y" }
+        ];
+        if (!isEligible18Y) milestoneDefs = milestoneDefs.filter(m => m.type !== "18Y");
+        milestoneDefs = milestoneDefs.map(m => ({ ...m, d: applyLwpShift(m.d) }))
+                                      .filter(m => m.d >= optionDate && m.d <= endDate);
+        milestoneDefs.forEach(m => pushEvent(m.d, { label: m.name, isMilestone: true, milestoneType: m.type }));
+
+        // Regular annual increment date = 1st day of the option/fixation date's month, each
+        // year starting the year after the option date (day of the option date itself does
+        // not matter — only its month). If a 10/18/20-year milestone falls in the gap
+        // immediately before a regular increment date, that one increment is deferred: the
+        // milestone-created pay "vests" for a full year from the milestone's own date
+        // (rounded to the last day of that month if the milestone did not fall on the 1st),
+        // and the deferred increment falls the day after that vesting period ends.
+        // Subsequent increments then revert to the normal option-month cycle.
+        function vestingExtendedNextDate(milestoneDate) {
+            const y = milestoneDate.getFullYear() + 1, m = milestoneDate.getMonth(), d = milestoneDate.getDate();
+            if (d === 1) return new Date(y, m, 1);
+            const vestEnd = new Date(y, m + 1, 0); // last day of month m, year y
+            const next = new Date(vestEnd);
+            next.setDate(next.getDate() + 1);
+            return next;
+        }
+
         let loopYear = optionDate.getFullYear() + 1;
-        while (loopYear <= endDate.getFullYear()) {
-            let alignedIncDate = new Date(loopYear, optionDate.getMonth(), 1); 
-            let finalIncDate = applyLwpShift(alignedIncDate);
-            if (finalIncDate >= optionDate && finalIncDate <= endDate) {
-                pushEvent(finalIncDate, { label: "INCREMENT", isAnnual: true });
+        while (loopYear <= endDate.getFullYear() + 1) {
+            let normalCycleDate = new Date(loopYear, optionMonth, 1);
+            let priorCycleDate = new Date(loopYear - 1, optionMonth, 1);
+            let interveningMilestone = milestoneDefs.find(m => m.d >= priorCycleDate && m.d < normalCycleDate);
+            let incrementDate;
+            if (interveningMilestone) {
+                incrementDate = vestingExtendedNextDate(interveningMilestone.d);
+                if (incrementDate < normalCycleDate) incrementDate = applyLwpShift(normalCycleDate);
+            } else {
+                incrementDate = applyLwpShift(normalCycleDate);
+            }
+            if (incrementDate >= optionDate && incrementDate <= endDate) {
+                pushEvent(incrementDate, { label: "INCREMENT", isAnnual: true });
             }
             loopYear++;
         }
 
-        const eligibleFor18Y = [1700, 2600, 3900, 4100].includes(scaleKey);
-        [
-            { d: generateAnniversaryDate(doj, 10), name: "10 YEARS", type: "10Y" },
-            { d: generateAnniversaryDate(doj, 18), name: "18 YEARS", type: "18Y" },
-            { d: generateAnniversaryDate(doj, 20), name: "20 YEARS", type: "20Y" }
-        ].forEach(milestone => {
-            if (milestone.type === "18Y" && !eligibleFor18Y) return;
-            let md = applyLwpShift(milestone.d);
-            if (md >= optionDate && md <= endDate) {
-                pushEvent(md, { label: milestone.name, isMilestone: true, milestoneType: milestone.type });
-            }
+        events.sort((a, b) => {
+            if (a.date.getTime() !== b.date.getTime()) return a.date - b.date;
+            if (a.isMilestone && b.isAnnual) return -1;
+            if (a.isAnnual && b.isMilestone) return 1;
+            return 0;
         });
-
-        events.sort((a, b) => a.date - b.date);
 
         let compiledRows = [];
         let runningBasicPay = initialBasicPay;
         let idx = ladder.indexOf(initialBasicPay);
         if (idx === -1) {
+            // nearest ladder position at or above the entered basic pay
             idx = ladder.findIndex(v => v >= initialBasicPay);
             if (idx === -1) idx = ladder.length - 1;
         }
 
         events.forEach(ev => {
-            let shortRemark = ev.label;
-            let oldBasic = runningBasicPay;
-            let prevScale = currentScaleKey;
-
             if (ev.isAnnual) {
                 if (idx < ladder.length - 1) idx += 1;
                 runningBasicPay = ladder[idx];
             } else if (ev.isMilestone) {
-                let incAmt = 0;
-                if (idx < ladder.length - 1) {
-                    incAmt = ladder[idx + 1] - ladder[idx];
-                    idx += 1;
-                }
-                runningBasicPay = ladder[idx];
-
-                if (ev.milestoneType === "18Y") {
-                    let preChangeBasic = runningBasicPay;
+                if (ev.milestoneType === "10Y" || ev.milestoneType === "20Y") {
+                    // One additional increment (single extra step) in the same old scale.
+                    if (idx < ladder.length - 1) idx += 1;
+                    runningBasicPay = ladder[idx];
+                } else if (ev.milestoneType === "18Y") {
+                    // Step 1: one additional increment in the old scale before the scale change.
+                    if (idx < ladder.length - 1) idx += 1;
+                    let preChangeBasic = ladder[idx];
+                    // Step 2: move to the promoted (next) old scale's ladder, placed at the
+                    // equal/next-higher stage.
                     let newScaleKey = promoMap09[currentScaleKey] || currentScaleKey;
                     let newLadder = matrixData98[newScaleKey] || ladder;
                     let newIdx = newLadder.findIndex(v => v >= preChangeBasic);
                     if (newIdx === -1) newIdx = newLadder.length - 1;
+                    // ROPA-1998 minimum entry pay rule: fixed pay in the new scale can never be
+                    // lower than that scale's minimum (first ladder cell).
+                    if (newLadder[newIdx] < newLadder[0]) newIdx = 0;
                     currentScaleKey = newScaleKey;
                     ladder = newLadder;
                     idx = newIdx;
                     runningBasicPay = ladder[idx];
                 }
-
-                shortRemark = `${ev.label}<div class="rem-slip">1. Existing Pay on ${formatDate(ev.date)}<br>BP: Rs. ${oldBasic}, Scale: GP ${prevScale}<br>2.a) Allowed Normal Increment: Nil<br>&nbsp;&nbsp;&nbsp;b) Additional Increment for ${ev.label} Service: Rs. ${incAmt}<br>&nbsp;&nbsp;&nbsp;c) Pay Fixed w.e.f ${formatDate(ev.date)}<br>Rs. ${runningBasicPay}</div>`;
             }
-
             compiledRows.push({
                 date: ev.date,
-                label: shortRemark,
+                label: ev.label,
                 scaleStr: `Old Scale &rarr; GP ${currentScaleKey}`,
                 trackCol: '',
                 gpDisplay: '',
                 basicDisplay: runningBasicPay.toLocaleString('en-IN'),
-                snapBasicPay: runningBasicPay,
-                snapScaleKey: currentScaleKey
+                slipHTML: '',
+                snapBasicPay: runningBasicPay
             });
         });
 
         finalizeDot(compiledRows, endDate);
-        return { rows: compiledRows };
+        return { rows: compiledRows, finalScaleKey: currentScaleKey };
     }
 
-    function getRopa98SnapshotAsOf(rows, initialBasicPay, initialScaleKey, asOfDate) {
+    function getRopa98SnapshotAsOf(rows, initialBasicPay, asOfDate) {
         let basic = initialBasicPay;
-        let scaleKey = initialScaleKey;
         for (const row of rows) {
             if (row.date.getTime() <= asOfDate.getTime()) {
                 basic = row.snapBasicPay;
-                scaleKey = row.snapScaleKey;
             } else {
                 break;
             }
         }
-        return { basic, scaleKey };
+        return { basic };
     }
 
-    function computeRopa09Timeline(doj, optionDate, gpInput, initialBandPay, endDate) {
+    // ---- ROPA-2009 notional timeline (always ends at min(DOR, 31-12-2019)) ----
+    function computeRopa09Timeline(doj, optionDate, gpInput, initialBandPay, endDate, lwpType, lwpStart, lwpEnd) {
         let events = [];
         function pushEvent(dateObj, data) { events.push({ date: new Date(dateObj), ...data }); }
 
-        pushEvent(optionDate, { label: "DOA / PAY REVISION", isInitial: true });
+        pushEvent(optionDate, { label: "DOA / PAY REVISION", isInitial: true, exactMilestoneDate: optionDate });
+
+        // LWP / Notional Increment rule (G.O. No. 181-SE(B) Dt. 8.10.2009) — precomputed once;
+        // touches at most the single 1-July cycle the LWP period actually falls in.
+        const lwpEffect = computeLwpEffect(lwpType, lwpStart, lwpEnd);
 
         let firstIncrementYear = optionDate.getFullYear();
         let optionDay = optionDate.getDate();
@@ -672,7 +843,16 @@
         let loopYear = firstIncrementYear;
         while (loopYear <= endDate.getFullYear()) {
             let julDate = new Date(loopYear, 6, 1);
-            if (julDate >= optionDate && julDate <= endDate) {
+            if (lwpEffect && lwpEffect.affectedYear === loopYear) {
+                if (lwpEffect.skip) {
+                    // LWP >= 12 months swallowed this cycle's 1-July date: no increment this year.
+                    loopYear++;
+                    continue;
+                }
+                if (julDate >= optionDate && julDate <= endDate) {
+                    pushEvent(lwpEffect.financialDate, { label: "INCREMENT", isAnnual: true, isLwpDeferred: true, notionalDate: julDate });
+                }
+            } else if (julDate >= optionDate && julDate <= endDate) {
                 pushEvent(julDate, { label: "INCREMENT", isAnnual: true });
             }
             loopYear++;
@@ -681,22 +861,34 @@
         const isExcludedFrom18Y = [4700, 4800, 5400].includes(gpInput);
         const eligibleFor18YScaleChange = [1700, 2600, 3900, 4100].includes(gpInput);
 
-        [ {d: generateAnniversaryDate(doj, 10), name: "10 YEARS"},
-          {d: generateAnniversaryDate(doj, 18), name: "18 YEARS"},
-          {d: generateAnniversaryDate(doj, 20), name: "20 YEARS"} ].forEach(milestone => {
+        [ {d: new Date(doj.getFullYear() + 10, doj.getMonth(), doj.getDate()), name: "10 YEARS"},
+          {d: new Date(doj.getFullYear() + 18, doj.getMonth(), doj.getDate()), name: "18 YEARS"},
+          {d: new Date(doj.getFullYear() + 20, doj.getMonth(), doj.getDate()), name: "20 YEARS"} ].forEach(milestone => {
             if (milestone.name === "18 YEARS" && isExcludedFrom18Y) return;
             if (milestone.d >= optionDate && milestone.d <= endDate) {
                 let win = checkWindow(milestone.d);
                 if (win === 'A') {
                     let targetJul = new Date(milestone.d.getFullYear(), 6, 1);
-                    pushEvent(targetJul, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: 'A' });
+                    // Same G.O. 181-SE(B) deferral applies if this milestone's "stacked July"
+                    // cycle is the one affected by LWP (skip case left as-is for milestones —
+                    // review manually if a milestone coincides with a >=12-month LWP cycle).
+                    if (lwpEffect && lwpEffect.affectedYear === targetJul.getFullYear() && !lwpEffect.skip) {
+                        pushEvent(lwpEffect.financialDate, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: 'A', isLwpDeferred: true, notionalDate: targetJul });
+                    } else {
+                        pushEvent(targetJul, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: 'A' });
+                    }
                 } else {
                     pushEvent(milestone.d, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: 'B' });
                 }
             }
         });
 
-        events.sort((a, b) => a.date - b.date);
+        events.sort((a, b) => {
+            if (a.date.getTime() !== b.date.getTime()) return a.date - b.date;
+            if (a.isAnnual && b.isMilestone) return -1;
+            if (a.isMilestone && b.isAnnual) return 1;
+            return 0;
+        });
 
         let compiledRows = [];
         let runningBandPay = initialBandPay;
@@ -705,34 +897,47 @@
 
         events.forEach(ev => {
             let colScaleStr = `${pbMap09[runningGp] || ''}-GP-${runningGp}`;
-            let shortRemark = ev.label;
+            let slipBlockHTML = "";
             let existingBandPay = runningBandPay;
             let existingGp = runningGp;
+            let incAmt = 0;
+            let lwpNote = ev.isLwpDeferred ? `<div class="slip-row" style="color:#c2410c;"><span>LWP (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Notional date ${formatDate(ev.notionalDate)}; financial benefit deferred to ${formatDate(ev.date)}</span></div>` : '';
 
             if (ev.isInitial) {
-                // Initial State
+                // seed row, no change
             } else if (ev.isAnnual) {
-                let incAmt = calculate09Increment(runningBandPay, runningGp);
+                incAmt = calculate09Increment(runningBandPay, runningGp);
                 runningBandPay += incAmt;
                 runningBasicPay = runningBandPay + runningGp;
+                if (ev.isLwpDeferred) {
+                    slipBlockHTML = `<div class="slip-box">${lwpNote}</div>`;
+                }
             } else if (ev.isMilestone) {
-                let incAmt = calculate09Increment(runningBandPay, runningGp);
+                incAmt = calculate09Increment(runningBandPay, runningGp);
                 runningBandPay += incAmt;
                 if (ev.label === "18 YEARS" && eligibleFor18YScaleChange && promoMap09[runningGp]) {
                     runningGp = promoMap09[runningGp];
                 }
                 runningBasicPay = runningBandPay + runningGp;
 
-                shortRemark = `${ev.label}<div class="rem-slip">1. Existing Pay on ${formatDate(ev.date)}<br>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${existingGp.toLocaleString('en-IN')}<br>2.a) Allowed Normal Increment: ${ev.win === 'A' ? 'Stacked July' : 'Nil'}<br>&nbsp;&nbsp;&nbsp;b) Additional Increment for ${ev.label} Service: Rs. ${incAmt.toLocaleString('en-IN')}<br>&nbsp;&nbsp;&nbsp;c) Pay Fixed w.e.f ${formatDate(ev.date)}<br>Rs. ${runningBasicPay.toLocaleString('en-IN')}</div>`;
+                slipBlockHTML = `
+                    <div class="slip-box">
+                        <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.exactMilestoneDate)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${existingGp.toLocaleString('en-IN')}</span></div>
+                        <div class="slip-row"><span>2.a) Allowed Normal Increment</span><span>${ev.win === 'A' ? 'Stacked July' : 'Nil'}</span></div>
+                        <div class="slip-row"><span>&nbsp;&nbsp;&nbsp;b) Additional Increment for ${ev.label} Service</span><span>Rs. ${incAmt.toLocaleString('en-IN')}</span></div>
+                        <div class="slip-row"><span class="slip-bold">&nbsp;&nbsp;&nbsp;c) Pay Fixed w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
+                        ${lwpNote}
+                    </div>`;
             }
 
             compiledRows.push({
                 date: ev.date,
-                label: shortRemark,
+                label: ev.label,
                 scaleStr: colScaleStr,
                 trackCol: runningBandPay.toLocaleString('en-IN'),
                 gpDisplay: runningGp.toLocaleString('en-IN'),
                 basicDisplay: runningBasicPay.toLocaleString('en-IN'),
+                slipHTML: slipBlockHTML,
                 snapBandPay: runningBandPay,
                 snapGp: runningGp
             });
@@ -742,6 +947,8 @@
         return { rows: compiledRows };
     }
 
+    // Snapshot of the ROPA-2009 notional Band Pay / Grade Pay as it stood on a given date
+    // (pay doesn't change except on a fixation event, so we use the last event on/before that date).
     function getRopa09SnapshotAsOf(rows, initialGp, initialBandPay, asOfDate) {
         let gp = initialGp, bandPay = initialBandPay;
         for (const row of rows) {
@@ -755,11 +962,16 @@
         return { gp, bandPay };
     }
 
-    function computeRopa19Timeline(doj, startDate, gpInput, levelInput, basicInput, dor) {
+    // ---- ROPA-2019 matrix timeline (from its own option date to DOR) ----
+    function computeRopa19Timeline(doj, startDate, gpInput, levelInput, basicInput, dor, lwpType, lwpStart, lwpEnd) {
         let events = [];
         function pushEvent(dateObj, data) { events.push({ date: new Date(dateObj), ...data }); }
 
-        pushEvent(startDate, { label: "ROPA-19 OPTION / FITMENT", isInitial: true });
+        pushEvent(startDate, { label: "ROPA-19 OPTION / FITMENT", isInitial: true, exactMilestoneDate: startDate });
+
+        // LWP / Notional Increment rule (G.O. No. 181-SE(B) Dt. 8.10.2009) — precomputed once;
+        // touches at most the single 1-July cycle the LWP period actually falls in.
+        const lwpEffect = computeLwpEffect(lwpType, lwpStart, lwpEnd);
 
         let firstIncrementYear = startDate.getFullYear();
         let optionDay = startDate.getDate();
@@ -770,7 +982,15 @@
         let loopYear = firstIncrementYear;
         while (loopYear <= dor.getFullYear()) {
             let julDate = new Date(loopYear, 6, 1);
-            if (julDate >= startDate && julDate <= dor) {
+            if (lwpEffect && lwpEffect.affectedYear === loopYear) {
+                if (lwpEffect.skip) {
+                    loopYear++;
+                    continue;
+                }
+                if (julDate >= startDate && julDate <= dor) {
+                    pushEvent(lwpEffect.financialDate, { label: "INCREMENT", isAnnual: true, isLwpDeferred: true, notionalDate: julDate });
+                }
+            } else if (julDate >= startDate && julDate <= dor) {
                 pushEvent(julDate, { label: "INCREMENT", isAnnual: true });
             }
             loopYear++;
@@ -779,22 +999,31 @@
         const isExcludedFrom18Y = [4700, 4800, 5400].includes(gpInput);
         const eligibleFor18YScaleChange = [1700, 2600, 3900, 4100].includes(gpInput);
 
-        [ {d: generateAnniversaryDate(doj, 10), name: "10 YEARS"},
-          {d: generateAnniversaryDate(doj, 18), name: "18 YEARS"},
-          {d: generateAnniversaryDate(doj, 20), name: "20 YEARS"} ].forEach(milestone => {
+        [ {d: new Date(doj.getFullYear() + 10, doj.getMonth(), doj.getDate()), name: "10 YEARS"},
+          {d: new Date(doj.getFullYear() + 18, doj.getMonth(), doj.getDate()), name: "18 YEARS"},
+          {d: new Date(doj.getFullYear() + 20, doj.getMonth(), doj.getDate()), name: "20 YEARS"} ].forEach(milestone => {
             if (milestone.name === "18 YEARS" && isExcludedFrom18Y) return;
             if (milestone.d >= startDate && milestone.d <= dor) {
                 let win = checkWindow(milestone.d);
                 if (win === 'A') {
                     let targetJul = new Date(milestone.d.getFullYear(), 6, 1);
-                    pushEvent(targetJul, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: 'A' });
+                    if (lwpEffect && lwpEffect.affectedYear === targetJul.getFullYear() && !lwpEffect.skip) {
+                        pushEvent(lwpEffect.financialDate, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: 'A', isLwpDeferred: true, notionalDate: targetJul });
+                    } else {
+                        pushEvent(targetJul, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: 'A' });
+                    }
                 } else {
                     pushEvent(milestone.d, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: 'B' });
                 }
             }
         });
 
-        events.sort((a, b) => a.date - b.date);
+        events.sort((a, b) => {
+            if (a.date.getTime() !== b.date.getTime()) return a.date - b.date;
+            if (a.isAnnual && b.isMilestone) return -1;
+            if (a.isMilestone && b.isAnnual) return 1;
+            return 0;
+        });
 
         let compiledRows = [];
         let runningBasicPay = basicInput;
@@ -805,19 +1034,21 @@
             let cellData = findCell19(runningLevel, runningBasicPay);
             let colScaleStr = `${pbMap19[runningGp] || ''}-${runningGp}`;
             let colTrackingInfo = "";
-            let shortRemark = ev.label;
+            let slipBlockHTML = "";
             let existingBasic = runningBasicPay;
             let existingLevel = runningLevel;
+            let lwpNote = ev.isLwpDeferred ? `<div class="slip-row" style="color:#c2410c;"><span>LWP (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Notional date ${formatDate(ev.notionalDate)}; financial benefit deferred to ${formatDate(ev.date)}</span></div>` : '';
 
             if (ev.isInitial) {
                 colTrackingInfo = cellData.cell;
             } else if (ev.isAnnual) {
                 runningBasicPay = matrixData19[runningLevel][cellData.index + 1] || runningBasicPay;
                 colTrackingInfo = findCell19(runningLevel, runningBasicPay).cell;
+                if (ev.isLwpDeferred) {
+                    slipBlockHTML = `<div class="slip-box">${lwpNote}</div>`;
+                }
             } else if (ev.isMilestone) {
                 let postMilestone = matrixData19[runningLevel][cellData.index + 1] || runningBasicPay;
-                let stepDiff = postMilestone - existingBasic;
-                
                 if (ev.label === "18 YEARS" && eligibleFor18YScaleChange) {
                     let nextGpKey = promoMap19[runningGp] || runningGp;
                     runningLevel = levelMap19[nextGpKey] || runningLevel;
@@ -826,18 +1057,27 @@
                 } else {
                     runningBasicPay = postMilestone;
                 }
-                colTrackingInfo = findCell19(runningLevel, runningBasicPay).cell;
 
-                shortRemark = `${ev.label}<div class="rem-slip">1. Existing Pay Matrix Cell Row on ${formatDate(ev.date)}<br>BP: Rs. ${existingBasic.toLocaleString('en-IN')} (L-${existingLevel})<br>2.a) Allowed Normal Increment: Nil<br>&nbsp;&nbsp;&nbsp;b) Additional Step cell upgrade added for ${ev.label} Service: Rs. ${stepDiff.toLocaleString('en-IN')}<br>&nbsp;&nbsp;&nbsp;c) Pay Fixed w.e.f ${formatDate(ev.date)}<br>Rs. ${runningBasicPay.toLocaleString('en-IN')} (${colTrackingInfo})</div>`;
+                let finalCellInfo = findCell19(runningLevel, runningBasicPay);
+                colTrackingInfo = finalCellInfo.cell;
+
+                slipBlockHTML = `
+                    <div class="slip-box">
+                        <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell Row on ${formatDate(ev.exactMilestoneDate)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${existingLevel})</span></div>
+                        <div class="slip-row"><span>2. Additional Step cell upgrade added for ${ev.label} Service</span><span>Rs. ${(postMilestone - existingBasic).toLocaleString('en-IN')}</span></div>
+                        <div class="slip-row"><span class="slip-bold">3. Final Matrix Fitment Entry w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')} (${finalCellInfo.cell})</span></div>
+                        ${lwpNote}
+                    </div>`;
             }
 
             compiledRows.push({
                 date: ev.date,
-                label: shortRemark,
+                label: ev.label,
                 scaleStr: colScaleStr,
                 trackCol: colTrackingInfo,
                 gpDisplay: runningGp.toLocaleString('en-IN'),
-                basicDisplay: runningBasicPay.toLocaleString('en-IN')
+                basicDisplay: runningBasicPay.toLocaleString('en-IN'),
+                slipHTML: slipBlockHTML
             });
         });
 
@@ -848,7 +1088,12 @@
     function renderRows98(tbodyId, sbTbodyId, rows) {
         let tbody = document.getElementById(tbodyId);
         let sbTbody = document.getElementById(sbTbodyId);
-        tbody.innerHTML = ""; sbTbody.innerHTML = "";
+        tbody.innerHTML = "";
+        sbTbody.innerHTML = "";
+        if (rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 20px;">No applicable entries in this window.</td></tr>`;
+            return;
+        }
         rows.forEach(row => {
             let trDate = formatDate(row.date);
             let trDot = formatDate(row.dot);
@@ -857,7 +1102,7 @@
                 <td><strong>${trDot}</strong></td>
                 <td style="font-size:0.8rem;">${row.scaleStr}</td>
                 <td><strong>₹ ${row.basicDisplay}</strong></td>
-                <td><strong>${row.label}</strong></td>`;
+                <td><strong>${row.label}</strong>${row.slipHTML}</td>`;
             let dRow = document.createElement('tr'); dRow.innerHTML = rowHTML; tbody.appendChild(dRow);
             let pRow = document.createElement('tr'); pRow.innerHTML = rowHTML; sbTbody.appendChild(pRow);
         });
@@ -866,10 +1111,16 @@
     function renderRows(tbodyId, sbTbodyId, rows) {
         let tbody = document.getElementById(tbodyId);
         let sbTbody = document.getElementById(sbTbodyId);
-        tbody.innerHTML = ""; sbTbody.innerHTML = "";
+        tbody.innerHTML = "";
+        sbTbody.innerHTML = "";
+        if (rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 20px;">No applicable entries in this window.</td></tr>`;
+            return;
+        }
         rows.forEach(row => {
             let trDate = formatDate(row.date);
             let trDot = formatDate(row.dot);
+
             let rowHTML = `
                 <td><strong>${trDate}</strong></td>
                 <td><strong>${trDot}</strong></td>
@@ -877,7 +1128,8 @@
                 <td style="text-align:center;">${row.trackCol}</td>
                 <td style="text-align:center;">₹ ${row.gpDisplay}</td>
                 <td><strong>₹ ${row.basicDisplay}</strong></td>
-                <td><strong>${row.label}</strong></td>`;
+                <td><strong>${row.label}</strong>${row.slipHTML}</td>`;
+
             let dRow = document.createElement('tr'); dRow.innerHTML = rowHTML; tbody.appendChild(dRow);
             let pRow = document.createElement('tr'); pRow.innerHTML = rowHTML; sbTbody.appendChild(pRow);
         });
@@ -902,6 +1154,7 @@
         let carryNote = "";
         let carryNote98 = "";
 
+        // ---- Phase 1: ROPA-1998 (if applicable) ----
         let ropa09InitialGp, ropa09InitialBand, ropa09HasCarry = false;
         if (enableRopa98) {
             const ropa98OptionInput = document.getElementById('ropa98OptionDate').value;
@@ -919,22 +1172,28 @@
             const result98 = computeRopa98Timeline(doj, ropa98OptionDate, ropa98Scale, ropa98BasicPay, ropa98EndDate, ropa98LwpDays, ropa98LwpFromDate);
             ropa98Rows = result98.rows;
 
-            const ropa09OptionInput = document.getElementById('ropa09OptionDate').value;
-            const snapAsOfDate = ropa09OptionInput ? new Date(ropa09OptionInput) : ropa98EndDate;
-            
-            const snap98 = getRopa98SnapshotAsOf(ropa98Rows, ropa98BasicPay, ropa98Scale, snapAsOfDate);
+            const ropa09OptionInputForSnap = document.getElementById('ropa09OptionDate').value;
+            const snapAsOfDate = ropa09OptionInputForSnap ? new Date(ropa09OptionInputForSnap) : ropa98EndDate;
+            const snap98 = getRopa98SnapshotAsOf(ropa98Rows, ropa98BasicPay, snapAsOfDate);
             const rawBand = snap98.basic * ROPA98_TO_09_FACTOR;
             const multipliedBand = ceilToNext10(rawBand);
-            
-            ropa09InitialGp = snap98.scaleKey; 
+            // Carry forward the FINAL grade pay (i.e. after any 18-year scale change that
+            // occurred within the ROPA-1998 window), not the originally-entered scale.
+            ropa09InitialGp = result98.finalScaleKey;
+
+            // Minimum Entry Pay floor: the x1.86 multiplication result can never be fixed
+            // below the prescribed minimum Pay in the Pay Band for that Grade Pay.
             const minBandForGp = minEntryPayBand09[ropa09InitialGp];
             const minEntryApplied = (minBandForGp !== undefined && multipliedBand < minBandForGp);
             ropa09InitialBand = minEntryApplied ? minBandForGp : multipliedBand;
             ropa09HasCarry = true;
 
-            carryNote98 = `<strong>Carried Forward into ROPA-2009:</strong> Basic Pay under ROPA-98 as on ${formatDate(snapAsOfDate)} = Rs. ${snap98.basic.toLocaleString('en-IN')} &times; 1.86 = Rs. ${rawBand.toFixed(2)} &rarr; Rounded to Rs. ${multipliedBand.toLocaleString('en-IN')} (GP ${ropa09InitialGp})`;
+            carryNote98 = `<strong>Carried Forward into ROPA-2009 (Rule II, WBS(ROPA) Rules 2009):</strong> Notional basic pay as on ${formatDate(snapAsOfDate)} under ROPA-1998 = Rs. ${snap98.basic.toLocaleString('en-IN')} &times; fitment factor 1.86 = Rs. ${rawBand.toFixed(2)} &rarr; rounded up to next Rs. 10 = Rs. ${multipliedBand.toLocaleString('en-IN')}` +
+                (minEntryApplied ? ` &rarr; below the prescribed Minimum Entry Pay in the Pay Band for GP ${ropa09InitialGp.toLocaleString('en-IN')} (Rs. ${minBandForGp.toLocaleString('en-IN')}) &rarr; stepped up to the minimum entry figure of Rs. ${ropa09InitialBand.toLocaleString('en-IN')}` : ``) +
+                ` Pay in Pay Band + Grade Pay Rs. ${ropa09InitialGp.toLocaleString('en-IN')} = Total Rs. ${(ropa09InitialBand + ropa09InitialGp).toLocaleString('en-IN')}. The ROPA-1998 table above continues independently as a notional record up to ${formatDate(ropa98EndDate)}.`;
         }
 
+        // ---- Phase 2: ROPA-2009 (if applicable) ----
         if (enableRopa09) {
             const ropa09OptionInput = document.getElementById('ropa09OptionDate').value;
             let ropa09Gp = ropa09HasCarry ? ropa09InitialGp : parseInt(document.getElementById('ropa09GradePay').value, 10);
@@ -943,7 +1202,13 @@
             const ropa09OptionDate = new Date(ropa09OptionInput);
             const ropa09EndDate = dor < ROPA09_CUTOFF ? dor : ROPA09_CUTOFF;
 
-            const result09 = computeRopa09Timeline(doj, ropa09OptionDate, ropa09Gp, ropa09BandPay, ropa09EndDate);
+            const ropa09LwpType = document.getElementById('ropa09LwpType').value;
+            const ropa09LwpStartInput = document.getElementById('ropa09LwpStart').value;
+            const ropa09LwpEndInput = document.getElementById('ropa09LwpEnd').value;
+            const ropa09LwpStart = ropa09LwpStartInput ? new Date(ropa09LwpStartInput) : null;
+            const ropa09LwpEnd = ropa09LwpEndInput ? new Date(ropa09LwpEndInput) : null;
+
+            const result09 = computeRopa09Timeline(doj, ropa09OptionDate, ropa09Gp, ropa09BandPay, ropa09EndDate, ropa09LwpType, ropa09LwpStart, ropa09LwpEnd);
             ropa09Rows = result09.rows;
 
             const snap = getRopa09SnapshotAsOf(ropa09Rows, ropa09Gp, ropa09BandPay, ropa19OptionDate);
@@ -955,10 +1220,22 @@
             carryGp = snap.gp;
             carryBasic = fit.value;
 
-            carryNote = `<strong>Carried Forward into ROPA-2019:</strong> Pay as on ${formatDate(ropa19OptionDate)} under ROPA-2009 = Rs. ${notionalBasic.toLocaleString('en-IN')} &times; 2.57 &rarr; Cell: Rs. ${carryBasic.toLocaleString('en-IN')} (${fit.cell}).`;
+            carryNote = `<strong>Carried Forward into ROPA-2019 (Rule 7, WBS(RPA) Rules 2019):</strong> Notional pay as on ${formatDate(ropa19OptionDate)} under ROPA-2009 = BP Rs. ${snap.bandPay.toLocaleString('en-IN')} + GP Rs. ${snap.gp.toLocaleString('en-IN')} = Rs. ${notionalBasic.toLocaleString('en-IN')} &times; fitment factor 2.57 = Rs. ${revisedRaw.toLocaleString('en-IN')} &rarr; located at equal/next-higher cell in ROPA-2019 Level-${carryLevel}: Rs. ${carryBasic.toLocaleString('en-IN')} (${fit.cell}). The ROPA-2009 table above continues independently as a notional record up to ${formatDate(ropa09EndDate)}.`;
+        } else {
+            carryGp = parseInt(document.getElementById('ropa19GradePayManual').value, 10);
+            carryBasic = parseInt(document.getElementById('ropa19BasicPayManual').value, 10);
+            if (isNaN(carryGp) || isNaN(carryBasic)) return;
+            carryLevel = levelMap19[carryGp] || 1;
+            carryNote = `<strong>Manual Entry:</strong> ROPA-2019 fixation starts at Rs. ${carryBasic.toLocaleString('en-IN')} (GP Rs. ${carryGp.toLocaleString('en-IN')}, Level-${carryLevel}) as on ${formatDate(ropa19OptionDate)}.`;
         }
 
-        const result19 = computeRopa19Timeline(doj, ropa19OptionDate, carryGp, carryLevel, carryBasic, dor);
+        const ropa19LwpType = document.getElementById('ropa19LwpType').value;
+        const ropa19LwpStartInput = document.getElementById('ropa19LwpStart').value;
+        const ropa19LwpEndInput = document.getElementById('ropa19LwpEnd').value;
+        const ropa19LwpStart = ropa19LwpStartInput ? new Date(ropa19LwpStartInput) : null;
+        const ropa19LwpEnd = ropa19LwpEndInput ? new Date(ropa19LwpEndInput) : null;
+
+        const result19 = computeRopa19Timeline(doj, ropa19OptionDate, carryGp, carryLevel, carryBasic, dor, ropa19LwpType, ropa19LwpStart, ropa19LwpEnd);
 
         document.getElementById('carryForwardOutput98').style.display = enableRopa98 ? '' : 'none';
         document.getElementById('carryForwardOutput98').innerHTML = carryNote98;
