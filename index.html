@@ -253,7 +253,7 @@
         </div>
     </div>
     <div class="output-box" style="background-color:#eff6ff;border-left-color:#1d4ed8;">
-        <strong>Fixation Rule Settings:</strong> Functional post promotions grant an extra increment before matching the target scale. Higher scale movements for qualification/upgradations bypass the promotional increment step, dropping the current basic pay directly into the new matrix row or old scale ladder structure. If multiple events land on the same date, they are applied in this order: Normal Annual Increment first, then the 10/18/20-Year Milestone, then Promotion / Higher Scale.
+        <strong>Fixation Rule Settings:</strong> Functional post promotions grant an extra increment before matching the target scale. Higher scale movements for qualification/upgradations bypass the promotional increment step. Upon promotion, post-promotion annual increment dates are strictly governed with respect to the Date of Promotion (as per ROPA rules): in ROPA-1998, the increment month shifts to the promotion month; in ROPA-2009/2019, if service in the promoted post as on 1st July is less than 6 months (promotion date between 2nd Jan and 30th Jun), the 1st July increment of that year is skipped and granted on 1st July of the next year.
     </div>
 
     <h3>2. ROPA-1998 Pre-2006 Fixation (Always Frozen on 31-03-2009)</h3>
@@ -721,23 +721,6 @@
         return (milestoneDate >= startWinA && milestoneDate <= endWinA) ? 'A' : 'B';
     }
 
-    // --- Unified LWP-with-CAS-effect handling (sourced from the single Leave Account,
-    // Section 5.3, entries of type 'lwp_effect') -----------------------------------------
-    // Replaces the old per-regime manual LWP fields / month-count skip-defer system.
-    //
-    // Rule:
-    //  - Every "LWP - WITH effect on 10/18/20Y increment" entry in the Leave Account
-    //    contributes its full day-count to any increment/milestone date that falls on or
-    //    after its start date (cumulative across the whole career, multiple spells allowed).
-    //  - For ROPA-1998 (pre-2006, no common increment date), the days are simply added
-    //    straight onto the affected date.
-    //  - For ROPA-2009 / ROPA-2019 (post-2006 common-increment-date regime): if the
-    //    ORIGINAL (un-shifted) date falls in the 02-Jan to 30-Jun window, it would normally
-    //    be pushed to 01-July of that year. That 01-July snap still applies as usual as long
-    //    as the applicable LWP days are small enough that original-date + LWP-days still
-    //    lands on/before 30-June. Otherwise (or if the date was never in that window to begin
-    //    with), the LWP days are added straight onto the original date instead.
-
     function getLwpEffectEntries() {
         if (typeof masterMlEntries === 'undefined') return [];
         return masterMlEntries
@@ -756,15 +739,11 @@
         return d;
     }
 
-    // For ROPA-1998: straight day-add, no common-increment-date window.
     function resolveDateNoWindow(originalDate, entries) {
         const lwpDays = lwpDaysAppliedBy(entries, originalDate);
         return lwpDays > 0 ? addDays(originalDate, lwpDays) : new Date(originalDate);
     }
 
-    // For ROPA-2009 / ROPA-2019: window-aware resolution (see rule above).
-    // lwpShifted is true only when the LWP actually changed the outcome versus the
-    // no-LWP baseline for this date (i.e. worth flagging/annotating on the row).
     function resolveDateWithLwp(originalDate, entries) {
         const win = checkWindow(originalDate);
         const lwpDays = lwpDaysAppliedBy(entries, originalDate);
@@ -784,12 +763,6 @@
         return { date: new Date(originalDate), win: 'B', lwpShifted: false };
     }
 
-    // For ROPA-1998 10/18/20-Year milestones only: if the milestone's own date falls in the
-    // 02-Jan to 30-Jun window, it is combined with the mid-year cut-off and its effective
-    // (benefit) date moves to 30-June of that year instead of its literal day-for-day date
-    // (the row's termination-date-before continues to run as it would have without the
-    // milestone). LWP is still added day-for-day on top as usual, unless it is small enough
-    // that the date still lands on/before 30-June, in which case the 30-June snap stands.
     function resolveRopa98MilestoneDate(originalDate, entries) {
         const win = checkWindow(originalDate);
         const lwpDays = lwpDaysAppliedBy(entries, originalDate);
@@ -803,14 +776,6 @@
         return lwpDays > 0 ? addDays(originalDate, lwpDays) : new Date(originalDate);
     }
 
-    // For ROPA-2009 / ROPA-2019 *normal annual* (common 01-July) increment only.
-    // Per the LWP deferment rule: LWP up to 1 month (30 days) since it was last "used" has
-    // NO effect on the normal increment date. Beyond that, the increment is deferred in
-    // whole-month blocks (the first 30 days of any newly-unconsumed LWP are "free", then
-    // every further up-to-30-day block adds one more month) and always lands on the 1st of
-    // the resulting month - never a literal day-for-day shift the way the 10/18/20Y
-    // milestones and the ROPA-1998 regime are. cumulativeLwp/alreadyConsumed let the caller
-    // avoid re-charging LWP that a 10/18/20Y milestone has already absorbed.
     function resolveAnnualIncrementWithLwp(julDate, cumulativeLwp, alreadyConsumed) {
         const newLwpDays = Math.max(0, cumulativeLwp - alreadyConsumed);
         if (newLwpDays <= 30) {
@@ -819,16 +784,6 @@
         const extraMonths = Math.floor((newLwpDays - 1) / 30);
         const shifted = new Date(julDate.getFullYear(), julDate.getMonth() + extraMonths, 1);
         return { date: shifted, win: 'B', lwpShifted: true };
-    }
-
-    function computePromotionSixMonthGap(promotionDate) {
-        let candidateYear = promotionDate.getFullYear();
-        let candidateJuly = new Date(candidateYear, 6, 1);
-        if (candidateJuly <= promotionDate) candidateYear += 1;
-        let normalJuly = new Date(candidateYear, 6, 1);
-        let gapDays = Math.round((normalJuly - promotionDate) / 86400000);
-        let deferred = gapDays < 182;
-        return { skipYear: deferred ? candidateYear : null };
     }
 
     function finalizeDot(compiledRows, endDate) {
@@ -876,11 +831,11 @@
             if (mA !== mB) return mA - mB;
             if (dA !== dB) return dA - dB;
             
-            // Same-date stacking order: Normal annual increment FIRST, then 10/18/20Y milestone, then Promotion/Higher Scale
             return eventPriority(a) - eventPriority(b);
         });
     }
 
+    /* --- ROPA-1998 TIMELINE COMPUTATION --- */
     function computeRopa98Timeline(doj, optionDate, scaleKey, initialBasicPay, endDate, promotionDate, promotionTargetGp, evType) {
         let ladder = matrixData98[scaleKey] || [];
         let currentScaleKey = scaleKey;
@@ -918,29 +873,69 @@
             return next;
         }
 
-        let loopYear = optionDate.getFullYear() + 1;
         let lwpConsumedSoFar98 = 0;
-        while (loopYear <= endDate.getFullYear() + 1) {
-            let normalCycleDate = new Date(loopYear, optionMonth, 1);
-            let priorCycleDate = new Date(loopYear - 1, optionMonth, 1);
-            let interveningMilestone = milestoneDefs.find(m => m.d >= priorCycleDate && m.d < normalCycleDate);
-            // Each LWP spell shifts only the ONE annual increment cycle immediately following it -
-            // once absorbed here, later cycles revert to the plain anniversary date (they don't
-            // keep re-adding the same, already-accounted-for leave every year).
-            let cumulativeLwp98 = lwpDaysAppliedBy(lwpEntries98, normalCycleDate);
-            let newLwpThisCycle98 = Math.max(0, cumulativeLwp98 - lwpConsumedSoFar98);
-            let incrementDate;
-            if (interveningMilestone) {
-                incrementDate = vestingExtendedNextDate(interveningMilestone.d);
-                if (incrementDate < normalCycleDate) incrementDate = newLwpThisCycle98 > 0 ? addDays(normalCycleDate, newLwpThisCycle98) : new Date(normalCycleDate);
-            } else {
-                incrementDate = newLwpThisCycle98 > 0 ? addDays(normalCycleDate, newLwpThisCycle98) : new Date(normalCycleDate);
+
+        if (promotionActive98) {
+            // 1. Pre-promotion annual increments (based on optionMonth)
+            let loopYear = optionDate.getFullYear() + 1;
+            while (loopYear <= promotionDate.getFullYear()) {
+                let normalCycleDate = new Date(loopYear, optionMonth, 1);
+                if (normalCycleDate < promotionDate) {
+                    let cumulativeLwp98 = lwpDaysAppliedBy(lwpEntries98, normalCycleDate);
+                    let newLwpThisCycle98 = Math.max(0, cumulativeLwp98 - lwpConsumedSoFar98);
+                    let incrementDate = newLwpThisCycle98 > 0 ? addDays(normalCycleDate, newLwpThisCycle98) : new Date(normalCycleDate);
+                    lwpConsumedSoFar98 = cumulativeLwp98;
+                    if (incrementDate >= optionDate && incrementDate < promotionDate) {
+                        pushEvent(incrementDate, { label: "INCREMENT", isAnnual: true });
+                    }
+                }
+                loopYear++;
             }
-            lwpConsumedSoFar98 = cumulativeLwp98;
-            if (incrementDate >= optionDate && incrementDate <= endDate) {
-                pushEvent(incrementDate, { label: "INCREMENT", isAnnual: true });
+
+            // 2. Post-promotion annual increments (based on promotionDate month as per ROPA-98 Rule)
+            let promoMonth = promotionDate.getMonth();
+            let postLoopYear = promotionDate.getFullYear() + 1;
+            while (postLoopYear <= endDate.getFullYear() + 1) {
+                let normalCycleDate = new Date(postLoopYear, promoMonth, 1);
+                let priorCycleDate = new Date(postLoopYear - 1, promoMonth, 1);
+                let interveningMilestone = milestoneDefs.find(m => m.d >= priorCycleDate && m.d < normalCycleDate);
+                let cumulativeLwp98 = lwpDaysAppliedBy(lwpEntries98, normalCycleDate);
+                let newLwpThisCycle98 = Math.max(0, cumulativeLwp98 - lwpConsumedSoFar98);
+                let incrementDate;
+                if (interveningMilestone) {
+                    incrementDate = vestingExtendedNextDate(interveningMilestone.d);
+                    if (incrementDate < normalCycleDate) incrementDate = newLwpThisCycle98 > 0 ? addDays(normalCycleDate, newLwpThisCycle98) : new Date(normalCycleDate);
+                } else {
+                    incrementDate = newLwpThisCycle98 > 0 ? addDays(normalCycleDate, newLwpThisCycle98) : new Date(normalCycleDate);
+                }
+                lwpConsumedSoFar98 = cumulativeLwp98;
+                if (incrementDate > promotionDate && incrementDate <= endDate) {
+                    pushEvent(incrementDate, { label: "INCREMENT", isAnnual: true });
+                }
+                postLoopYear++;
             }
-            loopYear++;
+        } else {
+            // No promotion: standard annual increments based on optionMonth
+            let loopYear = optionDate.getFullYear() + 1;
+            while (loopYear <= endDate.getFullYear() + 1) {
+                let normalCycleDate = new Date(loopYear, optionMonth, 1);
+                let priorCycleDate = new Date(loopYear - 1, optionMonth, 1);
+                let interveningMilestone = milestoneDefs.find(m => m.d >= priorCycleDate && m.d < normalCycleDate);
+                let cumulativeLwp98 = lwpDaysAppliedBy(lwpEntries98, normalCycleDate);
+                let newLwpThisCycle98 = Math.max(0, cumulativeLwp98 - lwpConsumedSoFar98);
+                let incrementDate;
+                if (interveningMilestone) {
+                    incrementDate = vestingExtendedNextDate(interveningMilestone.d);
+                    if (incrementDate < normalCycleDate) incrementDate = newLwpThisCycle98 > 0 ? addDays(normalCycleDate, newLwpThisCycle98) : new Date(normalCycleDate);
+                } else {
+                    incrementDate = newLwpThisCycle98 > 0 ? addDays(normalCycleDate, newLwpThisCycle98) : new Date(normalCycleDate);
+                }
+                lwpConsumedSoFar98 = cumulativeLwp98;
+                if (incrementDate >= optionDate && incrementDate <= endDate) {
+                    pushEvent(incrementDate, { label: "INCREMENT", isAnnual: true });
+                }
+                loopYear++;
+            }
         }
 
         sortTimelineEvents(events);
@@ -1007,6 +1002,7 @@
         return { rows: compiledRows, finalScaleKey: currentScaleKey };
     }
 
+    /* --- ROPA-2009 TIMELINE COMPUTATION --- */
     function computeRopa09Timeline(doj, optionDate, gpInput, initialBandPay, endDate, promotionDate, promotionTargetGp, evType) {
         let events = [];
         function pushEvent(dateObj, data) { events.push({ date: new Date(dateObj), ...data }); }
@@ -1016,16 +1012,8 @@
         const lwpEntries09 = getLwpEffectEntries();
 
         const promotionActive = (promotionDate instanceof Date && !isNaN(promotionDate) && promotionDate >= optionDate && promotionDate <= endDate);
-        const promoWin = promotionActive ? checkWindow(promotionDate) : null;
-        const effectivePromotionDate = (promotionActive && promoWin === 'A') ? new Date(promotionDate.getFullYear(), 6, 1) : promotionDate;
         if (promotionActive) {
-            pushEvent(effectivePromotionDate, { label: evType === 'promo' ? "PROMOTION" : "HIGHER SCALE", isPromotion: true, targetGp: promotionTargetGp, exactPromotionDate: promotionDate });
-        }
-        let firstIncrementYear = optionDate.getFullYear();
-        let optionDay = optionDate.getDate();
-        let optionMonth = optionDate.getMonth();
-        if ((optionMonth === 0 && optionDay >= 2) || (optionMonth > 0 && optionMonth < 5) || (optionMonth === 5 && optionDay <= 30)) {
-            firstIncrementYear += 1;
+            pushEvent(promotionDate, { label: evType === 'promo' ? "PROMOTION" : "HIGHER SCALE", isPromotion: true, targetGp: promotionTargetGp, exactPromotionDate: promotionDate });
         }
 
         const isExcludedFrom18Y = [4700, 4800, 5400].includes(gpInput);
@@ -1038,28 +1026,75 @@
         ];
         if (isExcludedFrom18Y) milestoneDefs09 = milestoneDefs09.filter(m => m.name !== "18 YEARS");
 
-        let loopYear = firstIncrementYear;
         let lwpConsumedSoFar09 = 0;
         let prevCycleBoundary09 = optionDate;
-        while (loopYear <= endDate.getFullYear()) {
-            let julDate = new Date(loopYear, 6, 1);
-            // A 10/18/20Y milestone landing since the last cycle already absorbs the
-            // outstanding LWP into its own effective date - the very next normal increment
-            // then resumes plain 01-July, it does not get shifted again for the same leave.
-            let interveningMilestone09 = milestoneDefs09.find(m => m.d >= prevCycleBoundary09 && m.d < julDate);
-            let cumulativeLwp09 = lwpDaysAppliedBy(lwpEntries09, julDate);
-            let resolved;
-            if (interveningMilestone09) {
-                resolved = { date: new Date(julDate), lwpShifted: false };
-            } else {
-                resolved = resolveAnnualIncrementWithLwp(julDate, cumulativeLwp09, lwpConsumedSoFar09);
+
+        if (promotionActive) {
+            // 1. Pre-promotion annual increments (01-July prior to promotionDate)
+            let firstIncrementYear = optionDate.getFullYear();
+            let optionDay = optionDate.getDate();
+            let optionMonth = optionDate.getMonth();
+            if ((optionMonth === 0 && optionDay >= 2) || (optionMonth > 0 && optionMonth < 5) || (optionMonth === 5 && optionDay <= 30)) {
+                firstIncrementYear += 1;
             }
-            lwpConsumedSoFar09 = cumulativeLwp09;
-            if (resolved.date >= optionDate && resolved.date <= endDate) {
-                pushEvent(resolved.date, { label: "INCREMENT", isAnnual: true, isLwpDeferred: resolved.lwpShifted, notionalDate: julDate });
+
+            let loopYear = firstIncrementYear;
+            while (loopYear <= promotionDate.getFullYear()) {
+                let julDate = new Date(loopYear, 6, 1);
+                if (julDate < promotionDate) {
+                    let interveningMilestone09 = milestoneDefs09.find(m => m.d >= prevCycleBoundary09 && m.d < julDate);
+                    let cumulativeLwp09 = lwpDaysAppliedBy(lwpEntries09, julDate);
+                    let resolved = interveningMilestone09 ? { date: new Date(julDate), lwpShifted: false } : resolveAnnualIncrementWithLwp(julDate, cumulativeLwp09, lwpConsumedSoFar09);
+                    lwpConsumedSoFar09 = cumulativeLwp09;
+                    if (resolved.date >= optionDate && resolved.date < promotionDate) {
+                        pushEvent(resolved.date, { label: "INCREMENT", isAnnual: true, isLwpDeferred: resolved.lwpShifted, notionalDate: julDate });
+                    }
+                    prevCycleBoundary09 = julDate;
+                }
+                loopYear++;
             }
-            prevCycleBoundary09 = julDate;
-            loopYear++;
+
+            // 2. Post-promotion annual increments (01-July calculated WRT promotionDate as per ROPA Rules)
+            // If promotion is on Jan 1: service on July 1st is 6 months -> next increment is July 1st of promotion year.
+            // If promotion is between Jan 2 and Dec 31: service on July 1st is < 6 months (or after July 1st) -> next increment is July 1st of NEXT year.
+            let postPromoStartYear = (promotionDate.getMonth() === 0 && promotionDate.getDate() === 1) ? promotionDate.getFullYear() : promotionDate.getFullYear() + 1;
+            let postLoopYear = postPromoStartYear;
+            prevCycleBoundary09 = promotionDate;
+
+            while (postLoopYear <= endDate.getFullYear()) {
+                let julDate = new Date(postLoopYear, 6, 1);
+                let interveningMilestone09 = milestoneDefs09.find(m => m.d >= prevCycleBoundary09 && m.d < julDate);
+                let cumulativeLwp09 = lwpDaysAppliedBy(lwpEntries09, julDate);
+                let resolved = interveningMilestone09 ? { date: new Date(julDate), lwpShifted: false } : resolveAnnualIncrementWithLwp(julDate, cumulativeLwp09, lwpConsumedSoFar09);
+                lwpConsumedSoFar09 = cumulativeLwp09;
+                if (resolved.date > promotionDate && resolved.date <= endDate) {
+                    pushEvent(resolved.date, { label: "INCREMENT", isAnnual: true, isLwpDeferred: resolved.lwpShifted, notionalDate: julDate });
+                }
+                prevCycleBoundary09 = julDate;
+                postLoopYear++;
+            }
+        } else {
+            // No promotion: standard annual increments
+            let firstIncrementYear = optionDate.getFullYear();
+            let optionDay = optionDate.getDate();
+            let optionMonth = optionDate.getMonth();
+            if ((optionMonth === 0 && optionDay >= 2) || (optionMonth > 0 && optionMonth < 5) || (optionMonth === 5 && optionDay <= 30)) {
+                firstIncrementYear += 1;
+            }
+
+            let loopYear = firstIncrementYear;
+            while (loopYear <= endDate.getFullYear()) {
+                let julDate = new Date(loopYear, 6, 1);
+                let interveningMilestone09 = milestoneDefs09.find(m => m.d >= prevCycleBoundary09 && m.d < julDate);
+                let cumulativeLwp09 = lwpDaysAppliedBy(lwpEntries09, julDate);
+                let resolved = interveningMilestone09 ? { date: new Date(julDate), lwpShifted: false } : resolveAnnualIncrementWithLwp(julDate, cumulativeLwp09, lwpConsumedSoFar09);
+                lwpConsumedSoFar09 = cumulativeLwp09;
+                if (resolved.date >= optionDate && resolved.date <= endDate) {
+                    pushEvent(resolved.date, { label: "INCREMENT", isAnnual: true, isLwpDeferred: resolved.lwpShifted, notionalDate: julDate });
+                }
+                prevCycleBoundary09 = julDate;
+                loopYear++;
+            }
         }
 
         milestoneDefs09.forEach(milestone => {
@@ -1085,7 +1120,6 @@
             let existingGp = runningGp;
             let incAmt = 0;
             let lwpNote = ev.isLwpDeferred ? `<div class="slip-row" style="color:#c2410c;"><span>LWP (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Notional date ${formatDate(ev.notionalDate)}; financial benefit deferred to ${formatDate(ev.date)}</span></div>` : '';
-            let promoWindowNote = (ev.isPromotion && ev.exactPromotionDate && ev.exactPromotionDate.getTime() !== ev.date.getTime()) ? `<div class="slip-row" style="color:#c2410c;"><span>Order Date ${formatDate(ev.exactPromotionDate)} falls in 02-Jan to 30-Jun window</span><span>Effective date forced to common increment date ${formatDate(ev.date)}</span></div>` : '';
 
             if (ev.isInitial) {
                 // Staging index row
@@ -1099,11 +1133,10 @@
                     runningBasicPay = runningBandPay + runningGp;
                     slipBlockHTML = `
                         <div class="slip-box">
-                            <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.exactPromotionDate || ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>2.a) One Additional Increment in Existing Scale</span><span>Rs. ${incAmt.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>&nbsp;&nbsp;&nbsp;b) Grade Pay changed to promoted post</span><span>Rs. ${oldGp.toLocaleString('en-IN')} &rarr; Rs. ${runningGp.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span class="slip-bold">&nbsp;&nbsp;&nbsp;c) Pay Fixed on Promotion w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
-                            ${promoWindowNote}
                         </div>`;
                 } else {
                     const floorBand = minEntryPayBand09[runningGp] || 0;
@@ -1113,10 +1146,9 @@
                     runningBasicPay = runningBandPay + runningGp;
                     slipBlockHTML = `
                         <div class="slip-box">
-                            <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.exactPromotionDate || ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span class="slip-bold">1. Existing Pay on ${formatDate(ev.date)}</span><span>BP: Rs. ${existingBandPay.toLocaleString('en-IN')}, GP: Rs. ${oldGp.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>2. Fitted directly into Higher Scale GP ${runningGp.toLocaleString('en-IN')} (No promotional increment)</span><span>&mdash;</span></div>
                             <div class="slip-row"><span class="slip-bold">3. Fixed Basic Pay w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
-                            ${promoWindowNote}
                         </div>`;
                 }
             } else if (ev.isAnnual) {
@@ -1161,6 +1193,7 @@
         return { rows: compiledRows };
     }
 
+    /* --- ROPA-2019 TIMELINE COMPUTATION --- */
     function computeRopa19Timeline(doj, startDate, gpInput, levelInput, basicInput, dor, promotionDate, promotionTargetGp, evType) {
         let events = [];
         function pushEvent(dateObj, data) { events.push({ date: new Date(dateObj), ...data }); }
@@ -1170,17 +1203,8 @@
         const lwpEntries19 = getLwpEffectEntries();
 
         const promotionActive = (promotionDate instanceof Date && !isNaN(promotionDate) && promotionDate >= startDate && promotionDate <= dor);
-        const promoWin = promotionActive ? checkWindow(promotionDate) : null;
-        const effectivePromotionDate = (promotionActive && promoWin === 'A') ? new Date(promotionDate.getFullYear(), 6, 1) : promotionDate;
         if (promotionActive) {
-            pushEvent(effectivePromotionDate, { label: evType === 'promo' ? "PROMOTION" : "HIGHER SCALE", isPromotion: true, targetGp: promotionTargetGp, exactPromotionDate: promotionDate });
-        }
-
-        let firstIncrementYear = startDate.getFullYear();
-        let optionDay = startDate.getDate();
-        let optionMonth = startDate.getMonth();
-        if ((optionMonth === 0 && optionDay >= 2) || (optionMonth > 0 && optionMonth < 5) || (optionMonth === 5 && optionDay <= 30)) {
-            firstIncrementYear += 1;
+            pushEvent(promotionDate, { label: evType === 'promo' ? "PROMOTION" : "HIGHER SCALE", isPromotion: true, targetGp: promotionTargetGp, exactPromotionDate: promotionDate });
         }
 
         const isExcludedFrom18Y = [4700, 4800, 5400].includes(gpInput);
@@ -1193,28 +1217,73 @@
         ];
         if (isExcludedFrom18Y) milestoneDefs19 = milestoneDefs19.filter(m => m.name !== "18 YEARS");
 
-        let loopYear = firstIncrementYear;
         let lwpConsumedSoFar19 = 0;
         let prevCycleBoundary19 = startDate;
-        while (loopYear <= dor.getFullYear()) {
-            let julDate = new Date(loopYear, 6, 1);
-            // A 10/18/20Y milestone landing since the last cycle already absorbs the
-            // outstanding LWP into its own effective date - the very next normal increment
-            // then resumes plain 01-July, it does not get shifted again for the same leave.
-            let interveningMilestone19 = milestoneDefs19.find(m => m.d >= prevCycleBoundary19 && m.d < julDate);
-            let cumulativeLwp19 = lwpDaysAppliedBy(lwpEntries19, julDate);
-            let resolved;
-            if (interveningMilestone19) {
-                resolved = { date: new Date(julDate), lwpShifted: false };
-            } else {
-                resolved = resolveAnnualIncrementWithLwp(julDate, cumulativeLwp19, lwpConsumedSoFar19);
+
+        if (promotionActive) {
+            // 1. Pre-promotion annual increments (01-July prior to promotionDate)
+            let firstIncrementYear = startDate.getFullYear();
+            let optionDay = startDate.getDate();
+            let optionMonth = startDate.getMonth();
+            if ((optionMonth === 0 && optionDay >= 2) || (optionMonth > 0 && optionMonth < 5) || (optionMonth === 5 && optionDay <= 30)) {
+                firstIncrementYear += 1;
             }
-            lwpConsumedSoFar19 = cumulativeLwp19;
-            if (resolved.date >= startDate && resolved.date <= dor) {
-                pushEvent(resolved.date, { label: "INCREMENT", isAnnual: true, isLwpDeferred: resolved.lwpShifted, notionalDate: julDate });
+
+            let loopYear = firstIncrementYear;
+            while (loopYear <= promotionDate.getFullYear()) {
+                let julDate = new Date(loopYear, 6, 1);
+                if (julDate < promotionDate) {
+                    let interveningMilestone19 = milestoneDefs19.find(m => m.d >= prevCycleBoundary19 && m.d < julDate);
+                    let cumulativeLwp19 = lwpDaysAppliedBy(lwpEntries19, julDate);
+                    let resolved = interveningMilestone19 ? { date: new Date(julDate), lwpShifted: false } : resolveAnnualIncrementWithLwp(julDate, cumulativeLwp19, lwpConsumedSoFar19);
+                    lwpConsumedSoFar19 = cumulativeLwp19;
+                    if (resolved.date >= startDate && resolved.date < promotionDate) {
+                        pushEvent(resolved.date, { label: "INCREMENT", isAnnual: true, isLwpDeferred: resolved.lwpShifted, notionalDate: julDate });
+                    }
+                    prevCycleBoundary19 = julDate;
+                }
+                loopYear++;
             }
-            prevCycleBoundary19 = julDate;
-            loopYear++;
+
+            // 2. Post-promotion annual increments (01-July calculated WRT promotionDate as per ROPA Rules)
+            let postPromoStartYear = (promotionDate.getMonth() === 0 && promotionDate.getDate() === 1) ? promotionDate.getFullYear() : promotionDate.getFullYear() + 1;
+            let postLoopYear = postPromoStartYear;
+            prevCycleBoundary19 = promotionDate;
+
+            while (postLoopYear <= dor.getFullYear()) {
+                let julDate = new Date(postLoopYear, 6, 1);
+                let interveningMilestone19 = milestoneDefs19.find(m => m.d >= prevCycleBoundary19 && m.d < julDate);
+                let cumulativeLwp19 = lwpDaysAppliedBy(lwpEntries19, julDate);
+                let resolved = interveningMilestone19 ? { date: new Date(julDate), lwpShifted: false } : resolveAnnualIncrementWithLwp(julDate, cumulativeLwp19, lwpConsumedSoFar19);
+                lwpConsumedSoFar19 = cumulativeLwp19;
+                if (resolved.date > promotionDate && resolved.date <= dor) {
+                    pushEvent(resolved.date, { label: "INCREMENT", isAnnual: true, isLwpDeferred: resolved.lwpShifted, notionalDate: julDate });
+                }
+                prevCycleBoundary19 = julDate;
+                postLoopYear++;
+            }
+        } else {
+            // No promotion: standard annual increments
+            let firstIncrementYear = startDate.getFullYear();
+            let optionDay = startDate.getDate();
+            let optionMonth = startDate.getMonth();
+            if ((optionMonth === 0 && optionDay >= 2) || (optionMonth > 0 && optionMonth < 5) || (optionMonth === 5 && optionDay <= 30)) {
+                firstIncrementYear += 1;
+            }
+
+            let loopYear = firstIncrementYear;
+            while (loopYear <= dor.getFullYear()) {
+                let julDate = new Date(loopYear, 6, 1);
+                let interveningMilestone19 = milestoneDefs19.find(m => m.d >= prevCycleBoundary19 && m.d < julDate);
+                let cumulativeLwp19 = lwpDaysAppliedBy(lwpEntries19, julDate);
+                let resolved = interveningMilestone19 ? { date: new Date(julDate), lwpShifted: false } : resolveAnnualIncrementWithLwp(julDate, cumulativeLwp19, lwpConsumedSoFar19);
+                lwpConsumedSoFar19 = cumulativeLwp19;
+                if (resolved.date >= startDate && resolved.date <= dor) {
+                    pushEvent(resolved.date, { label: "INCREMENT", isAnnual: true, isLwpDeferred: resolved.lwpShifted, notionalDate: julDate });
+                }
+                prevCycleBoundary19 = julDate;
+                loopYear++;
+            }
         }
 
         milestoneDefs19.forEach(milestone => {
@@ -1241,7 +1310,6 @@
             let existingBasic = runningBasicPay;
             let existingLevel = runningLevel;
             let lwpNote = ev.isLwpDeferred ? `<div class="slip-row" style="color:#c2410c;"><span>LWP (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Notional date ${formatDate(ev.notionalDate)}; financial benefit deferred to ${formatDate(ev.date)}</span></div>` : '';
-            let promoWindowNote = (ev.isPromotion && ev.exactPromotionDate && ev.exactPromotionDate.getTime() !== ev.date.getTime()) ? `<div class="slip-row" style="color:#c2410c;"><span>Order Date ${formatDate(ev.exactPromotionDate)} falls in 02-Jan to 30-Jun window</span><span>Effective date forced to common increment date ${formatDate(ev.date)}</span></div>` : '';
 
             if (ev.isInitial) {
                 colTrackingInfo = cellData.cell;
@@ -1259,11 +1327,10 @@
                     colTrackingInfo = fitted.cell;
                     slipBlockHTML = `
                         <div class="slip-box">
-                            <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.exactPromotionDate || ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
+                            <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
                             <div class="slip-row"><span>2.a) One Increment within Existing Level ${oldLevel}</span><span>Rs. ${oneStepValue.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>&nbsp;&nbsp;&nbsp;b) Fitted into Target Level ${targetLevel} (equal/next-higher cell)</span><span>&mdash;</span></div>
                             <div class="slip-row"><span class="slip-bold">&nbsp;&nbsp;&nbsp;c) Pay Fixed on Promotion w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')} (${fitted.cell})</span></div>
-                            ${promoWindowNote}
                         </div>`;
                 } else {
                     let fitted = findCell19(targetLevel, runningBasicPay);
@@ -1273,10 +1340,9 @@
                     colTrackingInfo = fitted.cell;
                     slipBlockHTML = `
                         <div class="slip-box">
-                            <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.exactPromotionDate || ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
+                            <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
                             <div class="slip-row"><span>2. Fitted directly into Target Level ${targetLevel} (equal/next-higher cell - No promo increment)</span><span>&mdash;</span></div>
                             <div class="slip-row"><span class="slip-bold">3. Pay Fixed w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')} (${fitted.cell})</span></div>
-                            ${promoWindowNote}
                         </div>`;
                 }
             } else if (ev.isAnnual) {
@@ -1325,8 +1391,6 @@
         return { rows: compiledRows };
     }
 
-    // --- Snapshot helpers: find the running pay/scale state as of a given cut-off date ---
-    // (These are needed to carry forward the notional pay from one ROPA phase into the next.)
     function getRopa98SnapshotAsOf(rows, initialBasicPay, initialScaleKey, asOfDate) {
         let basic = initialBasicPay;
         let scaleKey = initialScaleKey;
@@ -1534,8 +1598,6 @@
 <script>
 /* =========================================================================
    LEAVE ACCOUNT (REGISTER) ENGINE
-   Reuses Section 1's Name / Designation / Date of Joining / Date of Birth.
-   "Generate rows up to" defaults from the Section-1 DOR but can be overridden.
    ========================================================================= */
 window.onerror = function(msg, url, line, col, err){
   const el = document.getElementById('errorBanner');
@@ -1551,7 +1613,7 @@ function showStatus(msg, isError){
   if(el){
     el.style.color = isError ? '#dc2626' : '#059669';
     el.textContent = msg;
-    try{ el.scrollIntoView({block:'nearest'}); }catch(e){ /* ignore in restrictive embeds */ }
+    try{ el.scrollIntoView({block:'nearest'}); }catch(e){ /* ignore */ }
   } else {
     console.log(msg);
   }
@@ -1571,22 +1633,19 @@ function daysBetween(from,to){
 }
 
 let periods = [];
-let masterMlEntries = []; // {id, from, to, type}
-let transferEvents = []; // {id, date}
+let masterMlEntries = [];
+let transferEvents = [];
 let idCounter = 1;
 
-const EL_ANNUAL_RATE = 15;   // days per full 365-day span (school/vacation-dept EL rate)
-const HPL_ANNUAL_RATE = 15;  // days per full 365-day span — confirmed against worked examples
-                              // (Note: generic WBSR Rule 173 text elsewhere states 20/year for
-                              // non-school staff, but this register's actual figures run on 15/year.)
-const EL_CAP = 365;          // max accumulated Earned Leave (lifetime cap on 4a)
-const HPL_CAP = 60;          // HPL credit caps at 60; earned shows 0 while capped, and only
-                              // refills up to the headroom needed after leave is taken
+const EL_ANNUAL_RATE = 15;
+const HPL_ANNUAL_RATE = 15;
+const EL_CAP = 365;
+const HPL_CAP = 60;
 
 function syncLeaveUpToDate(){
   const el = document.getElementById('leaveUpToDate');
   if(!el) return;
-  if(el.dataset.userSet==='1') return; // don't clobber a manual override
+  if(el.dataset.userSet==='1') return;
   const dor = getDOR();
   if(dor) el.value = toISO(dor);
 }
@@ -1611,7 +1670,6 @@ function updatePeriodField(i, field, value){
   renderAll();
 }
 
-// ---- Transfer events ----
 function toggleTransferUI(){
   const val = document.getElementById('hasTransfer').value;
   document.getElementById('transferInputSection').style.display = (val==='yes') ? '' : 'none';
@@ -1629,7 +1687,6 @@ function deleteTransferEvent(id){
   renderAll();
 }
 
-// ---- Auto-generate Period of Duty rows ----
 function addYears(date, years){
   const d = new Date(date.getTime());
   d.setFullYear(d.getFullYear()+years);
@@ -1656,7 +1713,6 @@ function autoGenerateRows(){
     return;
   }
 
-  // Anniversary breakpoints, purely from the original DOJ, unaffected by transfers
   let breakpoints = [];
   let k = 1;
   while(true){
@@ -1665,7 +1721,6 @@ function autoGenerateRows(){
     breakpoints.push(anniv.getTime());
     k++;
   }
-  // Transfer breakpoints (extra splits, do not shift the anniversary cycle) — only if the user said there was a transfer
   if(hasTransfer){
     transferEvents.forEach(t=>{
       const td = new Date(t.date+'T00:00:00');
@@ -1701,7 +1756,6 @@ function autoGenerateRows(){
   showStatus(`Generated ${newPeriods.length} Period of Duty rows from ${fmt(toISO(dojDate))} to ${fmt(toISO(dorDate))}.`, false);
 }
 
-// ---- ML / HPL entries (master list, auto-split across rows) ----
 function addMlEntry(){
   const type = document.getElementById('mlType').value;
   const from = document.getElementById('mlFrom').value;
@@ -1725,14 +1779,6 @@ function addMlEntry(){
   showStatus(`${typeLabel} entry added: ${fmt(from)} to ${fmt(to)}.`, false);
 }
 
-// Annotates every row's Event/Reason (row.label) across ALL THREE ropa tables together:
-// - The FIRST row (in 98 -> 09 -> 19 chronological table order) where a leave entry overlaps
-//   gets the full note (type, dates, days).
-// - Every later row where the SAME entry overlaps -- whether later in the same table (the
-//   entry spans a row boundary) or in a different table -- gets a short back-reference
-//   ("ALREADY NOTED IN LINE N" for the same table, or "ALREADY NOTED IN ROPA-98 LINE N"
-//   across tables) instead of repeating the details.
-// - Any row with no leave entry overlapping it at all gets "NO LEAVE".
 function annotateAllTablesWithLeave(tables){
   if(!tables || !Array.isArray(tables)) return;
   const typeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', lwp_effect:'LWP (affects CAS)', lwp_noeffect:'LWP (no CAS effect)'};
@@ -1741,7 +1787,7 @@ function annotateAllTablesWithLeave(tables){
     (t.rows||[]).forEach((row,idx)=>{ row._lineNum = idx+1; row._leaveNotes = []; });
   });
 
-  const firstSeen = {}; // entry.id -> {table, line}
+  const firstSeen = {};
   masterMlEntries.forEach(entry=>{
     const eFrom = new Date(entry.from+'T00:00:00');
     const eTo = new Date(entry.to+'T00:00:00');
@@ -1785,6 +1831,7 @@ function deleteMlEntry(masterId){
   assignMlEntries();
   renderAll();
 }
+
 function assignMlEntries(){
   periods.forEach(p=> { p.mlEntries = []; p.lwp = 0; });
   const matchedIds = new Set();
@@ -1792,8 +1839,6 @@ function assignMlEntries(){
     const leaveFrom = new Date(entry.from+'T00:00:00');
     const leaveTo = new Date(entry.to+'T00:00:00');
     const totalDays = daysBetween(entry.from, entry.to);
-    // HPL is debited from the ledger at ceil(days/2); Average-pay (EL) leave is debited day-for-day.
-    // LWP (either variant) does not debit the EL/HPL ledger at all — it's tracked separately (col 11).
     const totalDebit = (entry.type==='half') ? Math.ceil(totalDays/2) : (entry.type==='avg' ? totalDays : 0);
     periods.forEach(p=>{
       if(!p.from || !p.to) return;
@@ -1819,7 +1864,7 @@ function assignMlEntries(){
 
 function computeDerived(){
   let runningAvg = 0, runningHalf = 0;
-  let cumulativeEarnedAvg = null; // lifetime total ever credited under 4a — capped at 365, never resets on leave taken
+  let cumulativeEarnedAvg = null;
 
   return periods.map((p, i) => {
     const takenAvg = p.mlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+e.debitDays,0);
@@ -1831,18 +1876,12 @@ function computeDerived(){
     const priorHalf = (i===0) ? (p.creditHalfManual!==null ? p.creditHalfManual : 0) : runningHalf;
 
     if(cumulativeEarnedAvg===null){
-      // Opening balance counts toward the lifetime 365-day earning cap from the start.
       cumulativeEarnedAvg = priorAvg;
     }
 
-    // ML / Average-pay leave: the TOTAL ever credited across all 4a entries (lifetime),
-    // opening balance included, can never exceed 365 — even if leave is later taken and
-    // the standing balance drops. Once the lifetime total hits 365, 4a stays 0 forever after.
     const effectiveEarnedAvg = Math.max(0, Math.min(Number(p.earnedAvg)||0, EL_CAP - cumulativeEarnedAvg));
     cumulativeEarnedAvg += effectiveEarnedAvg;
 
-    // HPL: cap applies to the standing balance (60 days) — earned is 0 while at/above cap,
-    // and only refills up to the headroom once leave is taken and balance drops below cap.
     const effectiveEarnedHalf = (priorHalf >= HPL_CAP) ? 0 : Math.max(0, Math.min(Number(p.earnedHalf)||0, HPL_CAP - priorHalf));
 
     let creditAvg = Math.min(EL_CAP, priorAvg + effectiveEarnedAvg);
@@ -1925,7 +1964,7 @@ function renderAll(){
   const derived = computeDerived();
 
   const tableBodyEl = document.getElementById('tableBody');
-  if(!tableBodyEl) return; // leave section not present on this page
+  if(!tableBodyEl) return;
   tableBodyEl.innerHTML = buildTableRows(derived,false);
   const totalsHtml = buildTotalsRowHtml();
   document.getElementById('leaveTotalsFoot').innerHTML = totalsHtml;
