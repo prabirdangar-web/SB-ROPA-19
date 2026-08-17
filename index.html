@@ -2222,20 +2222,16 @@ function casToggleGovFields() {
 }
 
 function casBuildServiceNarrative(sriSmt, staffName, designation, doj, priorSchools, dojCurrentSchool, fullSchool, approvalNo, heShe) {
-    const heSheCap = heShe.charAt(0).toUpperCase() + heShe.slice(1);
     if (!priorSchools.length) {
         return `${sriSmt} ${staffName} joined on ${casFmt(doj)} as an approved ${designation} of ${fullSchool} and has been serving continuously and satisfactorily since then.`;
     }
-    const segs = [];
-    priorSchools.forEach((s, i) => {
-        if (i === 0) {
-            segs.push(`${sriSmt} ${staffName} first joined on ${casFmt(s.doj || doj)} as an approved ${designation} at ${s.name}${s.dol ? ', and served there up to ' + casFmt(s.dol) : ''}.`);
-        } else {
-            segs.push(`Thereafter, ${heShe} served as an approved ${designation} at ${s.name}${s.doj ? ' from ' + casFmt(s.doj) : ''}${s.dol ? ' to ' + casFmt(s.dol) : ''}.`);
-        }
-    });
-    segs.push(`${heSheCap} is now serving as an approved ${designation} of ${fullSchool}${approvalNo ? ' [Approval No. ' + approvalNo + ']' : ''} since ${casFmt(dojCurrentSchool)}.`);
-    return segs.join(' ');
+    const chainStr = priorSchools.map((s, i) => {
+        const from = casFmt(s.doj || (i === 0 ? doj : null));
+        const to = s.dol ? casFmt(s.dol) : 'till date';
+        return `${s.name} ${from} TO ${to}`;
+    }).join(' & ');
+    const firstJoinDate = casFmt(priorSchools[0].doj || doj);
+    return `${sriSmt} ${staffName} first joined on ${firstJoinDate} as an approved ${designation} at ${chainStr} now ${heShe} is acting as an approved ${designation} of ${fullSchool}${approvalNo ? ' [Approval No. ' + approvalNo + ']' : ''} since ${casFmt(dojCurrentSchool)}.`;
 }
 
 function casFmt(d){
