@@ -204,7 +204,23 @@
         </div>
         <div class="form-group">
             <label>Designation</label>
-            <input type="text" id="designation" value="Assistant Teacher">
+            <input type="text" id="designation" value="Assistant Teacher" list="designationOptions">
+            <datalist id="designationOptions">
+                <option value="Assistant Teacher">
+                <option value="Headmaster">
+                <option value="Headmistress">
+                <option value="Teacher-in-Charge">
+                <option value="Assistant Headmaster">
+                <option value="Assistant Headmistress">
+                <option value="Librarian">
+                <option value="Laboratory Assistant">
+                <option value="Clerk">
+                <option value="Head Clerk">
+                <option value="Group-D Staff">
+                <option value="Group-C Staff (Non-Teaching)">
+                <option value="Physical Education Teacher">
+                <option value="Work Education Teacher">
+            </datalist>
         </div>
         <div class="form-group">
             <label>Date of Birth</label>
@@ -528,6 +544,102 @@
     <div class="btn-group">
         <button class="btn-print" onclick="doPrint()">Print / Generate Leave A/c Page</button>
     </div>
+
+    <h3 style="margin-top:40px;border-top:3px solid var(--secondary-color);padding-top:20px;">6. CAS / Milestone Benefit Documents (10 / 18 / 20 Years)</h3>
+    <div class="output-box" style="background-color:#eff6ff;border-left-color:#1d4ed8;">
+        Generates the complete official document set — Part-A Option &amp; Declaration, Part-B Fixation, Forwarding Application, HOI Report, Administrator Order, and letters to the District Inspector of Schools — for whichever 10/18/20-Year milestone applies. Pay figures are pulled automatically from the ROPA-1998/2009/2019 tables in Sections 2–4, so click <strong>"Generate Pay Tables"</strong> first. The document format (ROPA-1998 / ROPA-2009 / ROPA-2019 wording and G.O. reference) is auto-selected based on which regime's timeline the milestone date actually falls in.
+    </div>
+    <div class="grid-inputs">
+        <div class="form-group">
+            <label>Sex</label>
+            <select id="casSex">
+                <option value="M" selected>Male (Sri / He)</option>
+                <option value="F">Female (Smt. / She)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Qualification</label>
+            <input type="text" id="casQualification" value="B.A.; B.Ed.">
+        </div>
+        <div class="form-group">
+            <label>School Postal Address (for letterheads)</label>
+            <input type="text" id="casSchoolAddress" value="P.O.- ; BLOCK- ; DISTRICT- ; PIN-">
+        </div>
+        <div class="form-group">
+            <label>District</label>
+            <input type="text" id="casDistrict" value="Bankura">
+        </div>
+    </div>
+    <div class="grid-inputs">
+        <div class="form-group">
+            <label>Date of Joining at THIS School (leave blank if same as 1st DOJ, Section 1)</label>
+            <input type="date" id="casDojCurrentSchool">
+        </div>
+        <div class="form-group">
+            <label>Approval No. &amp; Date at this School</label>
+            <input type="text" id="casApprovalNo" placeholder="e.g. 1954/S; dated 04-07-2022">
+        </div>
+        <div class="form-group">
+            <label>Previous School Name &amp; Address (leave blank if no transfer)</label>
+            <input type="text" id="casPrevSchool" placeholder="e.g. XYZ High School, P.O..., Dist. ...">
+        </div>
+    </div>
+    <div class="grid-inputs">
+        <div class="form-group">
+            <label>M.C. Resolution / Administrator Order No. &amp; Date</label>
+            <input type="text" id="casResolutionNo" placeholder="e.g. 04/25 Dated: 31-10-2025">
+        </div>
+        <div class="form-group">
+            <label>District Inspector of Schools — Office Address (for letters)</label>
+            <input type="text" id="casDiOffice" value="The District Inspector of Schools (S.E.),">
+        </div>
+        <div class="form-group">
+            <label>Date of Option (today, or as applicable)</label>
+            <input type="date" id="casOptionDate">
+        </div>
+    </div>
+    <div class="grid-inputs">
+        <div class="form-group">
+            <label>School Governance</label>
+            <select id="casGovType" onchange="casToggleGovFields()">
+                <option value="Administrator" selected>Administrator</option>
+                <option value="MC">Managing Committee</option>
+            </select>
+        </div>
+        <div class="form-group" id="casMcValidGroup" style="display:none;">
+            <label>M.C. Valid Up To</label>
+            <input type="date" id="casMcValidUpto">
+        </div>
+        <div class="form-group">
+            <label>Sub-Division</label>
+            <input type="text" id="casSubDivision" placeholder="e.g. Khatra">
+        </div>
+    </div>
+    <div class="grid-inputs">
+        <div class="form-group">
+            <label>School Contact No.</label>
+            <input type="text" id="casContactNo" placeholder="e.g. 9434654678 [ HOI ]">
+        </div>
+        <div class="form-group">
+            <label>School E-mail</label>
+            <input type="text" id="casEmail" placeholder="e.g. school@gmail.com">
+        </div>
+    </div>
+
+    <h4 style="margin-top:16px;">Prior School Service History (add every school served before the current one — supports 3 or more)</h4>
+    <p style="font-size:.78rem;color:#555;margin:0 0 8px;">Leave empty if the staff member has always served only at the current school. Applications spanning multiple schools automatically get a chained service narrative across every letter.</p>
+    <div id="casPriorSchoolsList"></div>
+    <div class="btn-row" style="margin-top:6px;">
+        <button type="button" class="btn-add" onclick="casAddPriorSchool()">+ Add Prior School</button>
+    </div>
+
+    <div class="btn-group" style="margin-top:16px;">
+        <button type="button" class="btn-generate" onclick="generateCasDocuments('10')">Generate 10-Year Documents</button>
+        <button type="button" class="btn-generate" onclick="generateCasDocuments('18')">Generate 18-Year Documents</button>
+        <button type="button" class="btn-generate" onclick="generateCasDocuments('20')">Generate 20-Year Documents</button>
+    </div>
+    <div id="casDocStatus" style="margin-top:8px;font-size:.85rem;font-weight:600;"></div>
+    <div id="casDocPreview" style="margin-top:16px;"></div>
 </div>
 
 <div id="printArea">
@@ -1586,6 +1698,12 @@
         renderRows98('payTableBody98', 'sbPrintTableBody98', ropa98Rows);
         renderRows('payTableBody09', 'sbPrintTableBody09', ropa09Rows);
         renderRows('payTableBody19', 'sbPrintTableBody19', result19.rows);
+
+        /* --- Exposed for Section 6 (CAS / Milestone Benefit Documents) — additive only, does not affect the above --- */
+        window.CAS_ropa98Rows = enableRopa98 ? ropa98Rows : [];
+        window.CAS_ropa09Rows = enableRopa09 ? ropa09Rows : [];
+        window.CAS_ropa19Rows = result19.rows;
+        window.CAS_dataReady = true;
     }
 
     window.addEventListener('DOMContentLoaded', function () {
@@ -2040,6 +2158,477 @@ window.addEventListener('DOMContentLoaded', function(){
     window.onerror(e.message, '', (e.lineNumber||''), '', e);
   }
 });
+</script>
+
+<script>
+/* =========================================================================
+   SECTION 6 — CAS / MILESTONE (10 / 18 / 20 YEARS) BENEFIT DOCUMENT ENGINE
+   Additive module: reads window.CAS_ropa98Rows / CAS_ropa09Rows / CAS_ropa19Rows
+   (exposed by processFixationTimeline in the core engine above) and the
+   Staff & Service Details already entered in Section 1. Does not alter any
+   existing calculation, table, or print flow.
+   ========================================================================= */
+
+const CAS_GO_REF = {
+    '98': 'U/M No. 25-SE(B) dt. 12.02.1999, as per ROPA-1998',
+    '09': 'G.O. No. 46-SE(B) dated 27.02.2009 read with G.O. No. 1B1-SE(B) dated 10.02.2009 and para-I of G.O. 30-SE(B) dated 10.02.2010, as per ROPA-2009',
+    '19': 'G.O. No. 437-SE(P&B)/SL/5S-408/19, dated 13.12.2019, as per ROPA-2019'
+};
+const CAS_REGIME_NAME = { '98': 'ROPA-1998', '09': 'ROPA-2009', '19': 'ROPA-2019' };
+const CAS_MILESTONE_LABEL = { '10': '10 YEARS', '18': '18 YEARS', '20': '20 YEARS' };
+const CAS_MILESTONE_BN = { '10': '১০ বছর', '18': '১৮ বছর', '20': '২০ বছর' };
+
+/* ---------- Prior-school (multi-school career) rows ---------- */
+let casPriorSchoolSeq = 0;
+function casAddPriorSchool(name, doj, dol) {
+    casPriorSchoolSeq++;
+    const id = casPriorSchoolSeq;
+    const wrap = document.createElement('div');
+    wrap.className = 'grid-inputs';
+    wrap.id = 'casPS_row_' + id;
+    wrap.style.borderTop = '1px dashed #cbd5e1';
+    wrap.style.paddingTop = '8px';
+    wrap.style.marginTop = '8px';
+    wrap.innerHTML = `
+        <div class="form-group"><label>School #${id} — Name &amp; Address</label><input type="text" id="casPS_name_${id}" value="${name || ''}" placeholder="e.g. XYZ High School, P.O..., Dist. ..."></div>
+        <div class="form-group"><label>Date of Joining</label><input type="date" id="casPS_doj_${id}" value="${doj || ''}"></div>
+        <div class="form-group"><label>Date of Relieving / Leaving</label><input type="date" id="casPS_dol_${id}" value="${dol || ''}"></div>
+        <div class="form-group"><label>&nbsp;</label><button type="button" class="btn-add" style="background:#b91c1c;" onclick="document.getElementById('casPS_row_${id}').remove()">Remove</button></div>`;
+    document.getElementById('casPriorSchoolsList').appendChild(wrap);
+}
+
+function casGetPriorSchools() {
+    const list = [];
+    document.querySelectorAll('#casPriorSchoolsList [id^="casPS_row_"]').forEach(row => {
+        const idSuffix = row.id.replace('casPS_row_', '');
+        const name = document.getElementById('casPS_name_' + idSuffix).value.trim();
+        const dojVal = document.getElementById('casPS_doj_' + idSuffix).value;
+        const dolVal = document.getElementById('casPS_dol_' + idSuffix).value;
+        if (name) {
+            list.push({
+                name,
+                doj: dojVal ? new Date(dojVal + 'T00:00:00') : null,
+                dol: dolVal ? new Date(dolVal + 'T00:00:00') : null
+            });
+        }
+    });
+    return list;
+}
+
+function casToggleGovFields() {
+    const isMc = document.getElementById('casGovType').value === 'MC';
+    document.getElementById('casMcValidGroup').style.display = isMc ? '' : 'none';
+}
+
+function casBuildServiceNarrative(sriSmt, staffName, designation, doj, priorSchools, dojCurrentSchool, fullSchool, approvalNo, heShe) {
+    const heSheCap = heShe.charAt(0).toUpperCase() + heShe.slice(1);
+    if (!priorSchools.length) {
+        return `${sriSmt} ${staffName} joined on ${casFmt(doj)} as an approved ${designation} of ${fullSchool} and has been serving continuously and satisfactorily since then.`;
+    }
+    const segs = [];
+    priorSchools.forEach((s, i) => {
+        if (i === 0) {
+            segs.push(`${sriSmt} ${staffName} first joined on ${casFmt(s.doj || doj)} as an approved ${designation} at ${s.name}${s.dol ? ', and served there up to ' + casFmt(s.dol) : ''}.`);
+        } else {
+            segs.push(`Thereafter, ${heShe} served as an approved ${designation} at ${s.name}${s.doj ? ' from ' + casFmt(s.doj) : ''}${s.dol ? ' to ' + casFmt(s.dol) : ''}.`);
+        }
+    });
+    segs.push(`${heSheCap} is now serving as an approved ${designation} of ${fullSchool}${approvalNo ? ' [Approval No. ' + approvalNo + ']' : ''} since ${casFmt(dojCurrentSchool)}.`);
+    return segs.join(' ');
+}
+
+function casFmt(d){
+    if (!(d instanceof Date) || isNaN(d)) return '________________';
+    return formatDate(d);
+}
+
+function casTodayInput(id){
+    const v = document.getElementById(id).value;
+    return v ? new Date(v + 'T00:00:00') : null;
+}
+
+function casFindMilestone(rows, type) {
+    if (!rows || !rows.length) return null;
+    const wanted = CAS_MILESTONE_LABEL[type];
+    const idx = rows.findIndex(r => r.label && r.label.indexOf(wanted) !== -1);
+    if (idx === -1) return null;
+    return { row: rows[idx], prevRow: idx > 0 ? rows[idx - 1] : null, nextRow: idx < rows.length - 1 ? rows[idx + 1] : null, idx };
+}
+
+function casDetectRegime(type) {
+    const sets = [['98', window.CAS_ropa98Rows], ['09', window.CAS_ropa09Rows], ['19', window.CAS_ropa19Rows]];
+    for (const [regime, rows] of sets) {
+        const found = casFindMilestone(rows, type);
+        if (found) return { regime, ...found };
+    }
+    return null;
+}
+
+function casDescribeRow(row) {
+    if (!row) return { scaleLabel: '—', payLabel: '—', cellLabel: '' };
+    return {
+        scaleLabel: row.scaleStr || '—',
+        payLabel: 'Rs. ' + (row.basicDisplay || '—'),
+        cellLabel: row.trackCol ? String(row.trackCol) : ''
+    };
+}
+
+function generateCasDocuments(type) {
+    const statusEl = document.getElementById('casDocStatus');
+    const previewEl = document.getElementById('casDocPreview');
+    statusEl.style.color = '#b91c1c';
+    previewEl.innerHTML = '';
+
+    if (!window.CAS_dataReady) {
+        statusEl.textContent = 'Please click "Generate Pay Tables" (Section 4) at least once first, so milestone data is available.';
+        return;
+    }
+
+    const doj = casTodayInput('doj') || new Date(document.getElementById('doj').value + 'T00:00:00');
+    if (!doj || isNaN(doj)) { statusEl.textContent = 'Please enter Date of Joining in Section 1.'; return; }
+
+    const detected = casDetectRegime(type);
+    if (!detected) {
+        statusEl.textContent = `No ${CAS_MILESTONE_LABEL[type]} milestone was found for this staff member within the generated tables — either not yet reached, falls outside the option/DOR window, or the staff member's Grade Pay is excluded from the scale-change benefit under current rules. (Note: 10-Year and 20-Year milestones normally grant only an additional increment, not a scale change — this is normal.)`;
+        return;
+    }
+
+    const { regime, row: msRow, prevRow, nextRow } = detected;
+    const completionDate = new Date(msRow.date); completionDate.setDate(completionDate.getDate() - 1);
+    const effectDate = new Date(msRow.date);
+    const nextIncrementDate = nextRow ? new Date(nextRow.date) : new Date(effectDate.getFullYear() + 1, 6, 1);
+
+    const existing = casDescribeRow(prevRow);
+    const fixed = casDescribeRow(msRow);
+
+    const sex = document.getElementById('casSex').value;
+    const sriSmt = sex === 'M' ? 'Sri' : 'Smt.';
+    const heShe = sex === 'M' ? 'he' : 'she';
+    const heSheCap = sex === 'M' ? 'He' : 'She';
+    const hisHer = sex === 'M' ? 'his' : 'her';
+    const himHer = sex === 'M' ? 'him' : 'her';
+
+    const staffName = document.getElementById('staffName').value || '________________';
+    const designation = document.getElementById('designation').value || '________________';
+    const schoolName = document.getElementById('schoolName').value || '________________';
+    const schoolAddr = document.getElementById('casSchoolAddress').value || '';
+    const fullSchool = schoolName + (schoolAddr ? '; ' + schoolAddr : '');
+    const qualification = document.getElementById('casQualification').value || '';
+    const district = document.getElementById('casDistrict').value || '';
+    const diOffice = document.getElementById('casDiOffice').value || 'The District Inspector of Schools (S.E.),';
+    const resolutionNo = document.getElementById('casResolutionNo').value || '________________';
+    const approvalNo = document.getElementById('casApprovalNo').value || '________________';
+    const prevSchool = document.getElementById('casPrevSchool').value || '';
+    const dojCurrentSchoolVal = document.getElementById('casDojCurrentSchool').value;
+    const priorSchoolsForDefault = casGetPriorSchools();
+    const defaultCurrentDoj = priorSchoolsForDefault.length && priorSchoolsForDefault[priorSchoolsForDefault.length - 1].dol
+        ? priorSchoolsForDefault[priorSchoolsForDefault.length - 1].dol
+        : doj;
+    const dojCurrentSchool = dojCurrentSchoolVal ? new Date(dojCurrentSchoolVal + 'T00:00:00') : defaultCurrentDoj;
+    const optionDateVal = document.getElementById('casOptionDate').value;
+    const optionDate = optionDateVal ? new Date(optionDateVal + 'T00:00:00') : new Date();
+    const govType = document.getElementById('casGovType').value;
+    const mcValidUptoVal = document.getElementById('casMcValidUpto').value;
+    const mcValidUpto = mcValidUptoVal ? casFmt(new Date(mcValidUptoVal + 'T00:00:00')) : '________________';
+    const subDivision = document.getElementById('casSubDivision').value || '';
+    const contactNo = document.getElementById('casContactNo').value || '';
+    const email = document.getElementById('casEmail').value || '';
+    const priorSchools = casGetPriorSchools();
+
+    const milestoneWord = CAS_MILESTONE_LABEL[type];
+    const milestoneWordBn = CAS_MILESTONE_BN[type];
+    const regimeName = CAS_REGIME_NAME[regime];
+    const goRef = CAS_GO_REF[regime];
+
+    const serviceNarrative = casBuildServiceNarrative(sriSmt, staffName, designation, doj, priorSchools, dojCurrentSchool, fullSchool, approvalNo, heShe);
+
+    /* ---------- DOC 1: PART A — OPTION & DECLARATION ---------- */
+    const doc1 = `
+        <p style="text-align:center;font-weight:bold;font-size:1.02rem;margin-bottom:2px;">PROFORMA FOR OPTION &amp; FIXATION OF PAY FOR CAS FOR ${milestoneWord} UNDER ${regimeName}</p>
+        <p style="text-align:center;font-size:.85rem;margin-top:0;">(For availing the benefit in terms of ${goRef})</p>
+        <p style="font-weight:bold;margin-top:18px;">PART - A : OPTION (to be filled in by the incumbent)</p>
+        <p>I do hereby opt to avail the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service under ${regimeName}, with effect from ${casFmt(effectDate)}, i.e. w.e.f. my date of entitlement.</p>
+        <p><strong>Declaration.</strong> I hereby undertake to refund to the Government any amount which may be drawn by me in excess of what is admissible to me on account of erroneous fixation of pay in the revised pay structure, as soon as the fact of such excess drawal comes / is brought to my notice.</p>
+        <table style="width:100%;margin-top:24px;"><tr>
+            <td style="width:50%;">Date: ${casFmt(optionDate)}<br>Station: ${schoolName}</td>
+            <td style="width:50%;text-align:right;">Signature of staff ____________________________<br>Name: ${staffName}<br>Designation: ${designation}</td>
+        </tr></table>`;
+
+    /* ---------- DOC 2: PART B — FIXATION (BY HOI) ---------- */
+    const partBRows = [
+        ['1', 'Name of the Employee', staffName],
+        ['2', 'Name of the School', fullSchool],
+        ['3', 'Designation', designation],
+        ['4', 'Date of Joining into Service', casFmt(doj)],
+        ['5', `Date of Completion of ${milestoneWord} Service [after taking LWP, if any, into account]`, casFmt(completionDate)],
+        ['6', 'Date of Option for availing this benefit', casFmt(optionDate)],
+        ['7', 'Existing Pay Level / Scale', existing.scaleLabel],
+        ['8', 'Existing Basic Pay' + (existing.cellLabel ? ' &amp; Cell/Stage' : ''), existing.payLabel + (existing.cellLabel ? ' [' + existing.cellLabel + ']' : '')],
+        ['9', 'Basic Pay Fixed at', fixed.payLabel + (fixed.cellLabel ? ' [' + fixed.cellLabel + ']' : '') + '<br><span style="font-size:.85rem;">In the pay Level/Scale: ' + fixed.scaleLabel + '</span>'],
+        ['10', 'Date of Effect', casFmt(effectDate)],
+        ['11', 'Date of Next Increment', casFmt(nextIncrementDate)]
+    ];
+    const doc2 = `
+        <p style="text-align:center;font-weight:bold;">PART - B : FIXATION (to be filled in by the HOI)</p>
+        <table style="width:100%;border-collapse:collapse;margin-top:10px;">
+            ${partBRows.map(r => `<tr><td style="width:5%;padding:4px;border-bottom:1px solid #ccc;">${r[0]}</td><td style="width:45%;padding:4px;border-bottom:1px solid #ccc;">${r[1]}</td><td style="width:2%;padding:4px;border-bottom:1px solid #ccc;">:</td><td style="padding:4px;border-bottom:1px solid #ccc;font-weight:600;">${r[2]}</td></tr>`).join('')}
+        </table>
+        <table style="width:100%;margin-top:30px;"><tr>
+            <td style="width:50%;">Date: ________________</td>
+            <td style="width:50%;text-align:right;">Signature of the Headmaster/Headmistress/TIC</td>
+        </tr></table>
+        <p style="margin-top:20px;">Approved by the Administrator / Managing Committee vide Resolution / Order No. ${resolutionNo}.</p>
+        <p style="text-align:right;margin-top:30px;">Secretary / Administrator</p>`;
+
+    /* ---------- DOC 3: APPLICATION / FORWARDING LETTER (Staff -> Administrator, through HM) ---------- */
+    const doc3 = `
+        <p>To<br>The Administrator / Secretary,<br>Through the Headmaster,<br>${schoolName}<br>${schoolAddr}</p>
+        <p style="margin-top:16px;"><strong>Subject:</strong> Declaration cum Application cum Option for availing the benefit of Career Advancement Scheme for completion of ${milestoneWord} continuous service under ${regimeName}.</p>
+        <p>Sir / Madam,</p>
+        <p style="text-align:justify;">${serviceNarrative} As a result, based on continuous service from ${casFmt(doj)}, I have completed a full ${milestoneWord.toLowerCase()} of uninterrupted and satisfactory service on ${casFmt(completionDate)}. Hence in terms of ${regimeName}, vide ${goRef}, I do hereby opt to avail the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service under ${regimeName}, with effect from ${casFmt(effectDate)}, i.e. w.e.f. my date of entitlement.</p>
+        <p style="text-align:justify;">I therefore request you to kindly take necessary arrangements to accord approval from the end of the ${diOffice} ${district} in my favour for availing the ${milestoneWord.toLowerCase()} pay-fixation benefit w.e.f. ${casFmt(effectDate)} as per ${regimeName} rules.</p>
+        <p style="text-align:justify;">It may also be noted, for your kind information, that my present Basic Pay is ${existing.payLabel} in the pay scale/level ${existing.scaleLabel}.</p>
+        <table style="width:100%;margin-top:24px;"><tr>
+            <td style="width:50%;">With thanks,<br>Date: ________________<br>Station: ${schoolName}</td>
+            <td style="width:50%;text-align:right;">Yours faithfully,<br><br>Signature of staff ____________________________<br>Name: ${staffName}<br>Designation: ${designation}</td>
+        </tr></table>
+        <p style="margin-top:16px;"><strong>Enclosures:</strong><br>1. 1st Approval of Appointment (copy)<br>2. Other related documents.</p>
+        <table style="width:100%;margin-top:24px;"><tr>
+            <td style="width:50%;">Received and forwarded to the Administrator<br><br>________________________<br>Headmaster/Headmistress/TIC</td>
+            <td style="width:50%;text-align:right;">Approved &amp; Passed<br><br>________________________<br>Administrator</td>
+        </tr></table>`;
+
+    /* ---------- DOC 4: HOI REPORT ---------- */
+    const doc4 = `
+        <p style="font-weight:bold;">HOI Report</p>
+        <p>Proposal No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <p style="text-align:justify;">${staffName}, ${designation} of this school, has duly submitted an application for allowing in ${hisHer} favour the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service under ${regimeName}.</p>
+        <p style="text-align:justify;">${hisHer[0].toUpperCase()+hisHer.slice(1)} application, along with all other necessary documents, is being placed for taking necessary steps in this regard.</p>
+        <p style="text-align:right;margin-top:40px;">________________________<br>Headmaster/Headmistress/TIC</p>`;
+
+    /* ---------- DOC 5: ADMINISTRATOR ORDER ---------- */
+    const doc5 = `
+        <p style="font-weight:bold;">Administrator Order</p>
+        <p>Order No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <p style="text-align:justify;">As per HOI report in connection with the application submitted by ${staffName}, ${designation} of this school, for allowing in ${hisHer} favour the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, and thereafter verifying related school documents, it is seen that ${serviceNarrative.charAt(0).toLowerCase() + serviceNarrative.slice(1)} It is also seen that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
+        <p style="text-align:justify;">Hence, in terms of ${goRef}, it is hereby approved and passed for allowing ${himHer} the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, with effect from ${casFmt(effectDate)}, i.e. w.e.f. ${hisHer} date of entitlement. ${hisHer[0].toUpperCase()+hisHer.slice(1)} following proposed pay details are also approved and passed:</p>
+        <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+            <tr><td style="padding:4px;">Existing Pay</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${existing.payLabel}${existing.cellLabel ? ' ['+existing.cellLabel+']' : ''}; ${existing.scaleLabel}</td></tr>
+            <tr><td style="padding:4px;">Pay to be Fixed at</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${fixed.payLabel}${fixed.cellLabel ? ' ['+fixed.cellLabel+']' : ''}; ${fixed.scaleLabel}</td></tr>
+            <tr><td style="padding:4px;">Date of Effect</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(effectDate)}</td></tr>
+            <tr><td style="padding:4px;">Date of Next Increment</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(nextIncrementDate)}</td></tr>
+        </table>
+        <p style="margin-top:12px;">The Headmaster/Headmistress/TIC of this school is requested to take necessary steps in this regard.</p>
+        <p style="text-align:right;margin-top:40px;">________________________<br>Administrator</p>`;
+
+    /* ---------- DOC 6: FORWARDING LETTER TO DI ---------- */
+    const doc6 = `
+        <p>To<br>${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
+        <p style="margin-top:16px;"><strong>Subject:</strong> Approval for ${milestoneWord} fixation benefit in favour of ${staffName}, ${designation} of ${schoolName}.</p>
+        <p>Sir,</p>
+        <p style="text-align:justify;">I would like to submit the necessary documents for approval of the ${milestoneWord.toLowerCase()} benefit w.e.f. ${casFmt(effectDate)} in favour of ${staffName}, ${designation} of ${schoolName}, in terms of ${regimeName}, vide ${goRef}.</p>
+        <p style="text-align:justify;">${serviceNarrative} It is also seen that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
+        <p style="text-align:justify;">I, therefore, as empowered by Resolution / Order No. ${resolutionNo}, request you to kindly accord approval in favour of ${staffName} regarding ${hisHer} prayer for availing the ${milestoneWord.toLowerCase()} pay-fixation benefit w.e.f. ${casFmt(effectDate)} as per ${regimeName} rules.</p>
+        <table style="width:100%;margin-top:24px;"><tr>
+            <td style="width:50%;">With thanks,</td>
+            <td style="width:50%;text-align:right;">Yours faithfully,<br><br>________________________<br>Headmaster/Headmistress/TIC</td>
+        </tr></table>
+        <p style="margin-top:16px;"><strong>Enclosures (with Check List):</strong></p>
+        <ol style="font-size:.88rem;line-height:1.5;">
+            <li>Forwarding letter of the HOI</li>
+            <li>Incumbent's application (Part-A)</li>
+            <li>Photocopy of M.C. Resolution / Administrator's Order</li>
+            <li>Photocopies of all approvals, including 1st approval</li>
+            <li>Triplicate copies of the ${milestoneWord.toLowerCase()} fixation proforma (Part-B)</li>
+            <li>Pay structure from 1st joining to date</li>
+            <li>Photocopy of up-to-date Service Book with Leave Account</li>
+            <li>Photocopy of prior option/fixation orders (ROPA-2009 &amp; 2019, as applicable)</li>
+            <li>Photocopy of educational qualification certificates/mark-sheets</li>
+            <li>Photocopy of current month's pay slip</li>
+            <li>No Litigation Certificate</li>
+            <li>M.C. Validity Certificate</li>
+            <li>Joining Report (all service)</li>
+            <li>Appointment letter / transfer order (all service)</li>
+            <li>S.S.C. recommendation (all service)</li>
+            <li>Certificate of reason for delay (if applicable)</li>
+        </ol>`;
+
+    /* ---------- DOC 7: FINAL ACCEPTANCE REQUEST TO DI ---------- */
+    const doc7 = `
+        <p>To<br>${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
+        <p style="margin-top:16px;"><strong>Subject:</strong> Request for acceptance, approval and finalization of ${milestoneWord.toLowerCase()} fixation benefit in favour of ${staffName}, ${designation}, w.e.f. ${casFmt(effectDate)}.</p>
+        <p>Sir,</p>
+        <p style="text-align:justify;">I would like to inform you that the fixation of the ${milestoneWord.toLowerCase()} benefit w.e.f. ${casFmt(effectDate)} in favour of ${staffName}, ${designation}, has been duly approved from your end vide Memo No. ________________/S dated ________________, in terms of ${regimeName} (vide ${goRef}), and has been forwarded in IOSMS to your end for your kind acceptance.</p>
+        <p style="text-align:justify;">I therefore request you to kindly accept, approve, and finalize the same.</p>
+        <table style="width:100%;margin-top:24px;"><tr>
+            <td style="width:50%;">With thanks,</td>
+            <td style="width:50%;text-align:right;">Yours faithfully,<br><br>________________________<br>Headmaster/Headmistress/TIC</td>
+        </tr></table>
+        <p style="margin-top:16px;"><strong>Enclosures:</strong><br>1. Approval of ${milestoneWord} Fixation of ${staffName}</p>`;
+
+    /* ---------- DOC 8: DISTRICT INSPECTOR'S OFFICE MEMORANDUM (final order, matches DI letterhead format) ---------- */
+    const existingNum = prevRow ? parseInt((prevRow.basicDisplay || '0').replace(/,/g, ''), 10) : 0;
+    const fixedNum = parseInt((msRow.basicDisplay || '0').replace(/,/g, ''), 10);
+    const incrementAmt = fixedNum - existingNum;
+    const govOrderWord = govType === 'MC' ? 'Resolution' : 'Administrator Order';
+
+    const doc8 = `
+        <div style="text-align:center;">
+            <div style="font-weight:bold;font-size:1.05rem;">Govt of West Bengal</div>
+            <div style="font-weight:bold;">Office of the District Inspector of School (S.E.)</div>
+            <div style="font-weight:bold;">${district}</div>
+            <div style="text-decoration:underline;font-weight:bold;margin-top:8px;">OFFICE MEMORANDUM</div>
+        </div>
+        <p style="text-align:justify;margin-top:16px;">${serviceNarrative} As per resolution adopted in the ${govType === 'MC' ? 'Managing Committee' : 'Administrator'} of the said school vide ${govOrderWord} No. ${resolutionNo}, it reveals that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
+        <p style="text-align:justify;">In terms of ${regimeName}, vide ${goRef}, ${sriSmt} ${staffName}, ${designation} of the said school, is hereby allowed to draw the raised pay in ${fixed.scaleLabel}${fixed.cellLabel ? ' [' + fixed.cellLabel + ']' : ''} w.e.f. ${casFmt(effectDate)} as per ${hisHer} option, for completion of ${milestoneWord.toLowerCase()} continuous and satisfactory service. ${hisHer[0].toUpperCase() + hisHer.slice(1)} pay is hereby fixed in the following manner:</p>
+        <table style="width:70%;margin:14px auto;border:1px solid #000;border-collapse:collapse;">
+            <tr><td colspan="2" style="border:1px solid #000;padding:6px;text-align:center;font-weight:bold;">BASIC PAY</td></tr>
+            <tr><td style="border:1px solid #000;padding:6px;">1. Existing Basic Pay as on ${casFmt(completionDate)} in ${existing.scaleLabel}</td><td style="border:1px solid #000;padding:6px;text-align:right;">Rs. ${existingNum.toLocaleString('en-IN')}</td></tr>
+            <tr><td style="border:1px solid #000;padding:6px;">2.a) Allowed Normal Increment [if required]</td><td style="border:1px solid #000;padding:6px;text-align:right;">Rs. 0</td></tr>
+            <tr><td style="border:1px solid #000;padding:6px;">&nbsp;&nbsp;&nbsp;b) Allowed one Addl. Increment for completion of ${milestoneWord.toLowerCase()} Service</td><td style="border:1px solid #000;padding:6px;text-align:right;">Rs. ${incrementAmt.toLocaleString('en-IN')}</td></tr>
+            <tr><td style="border:1px solid #000;padding:6px;font-weight:bold;">&nbsp;&nbsp;&nbsp;c) Pay finally fixed w.e.f. ${casFmt(effectDate)} in the ${fixed.scaleLabel}${fixed.cellLabel ? ' [' + fixed.cellLabel + ']' : ''}</td><td style="border:1px solid #000;padding:6px;text-align:right;font-weight:bold;">Rs. ${fixedNum.toLocaleString('en-IN')}</td></tr>
+        </table>
+        <p style="font-weight:bold;">Date of Next Increment: ${casFmt(nextIncrementDate)}</p>
+        <p style="text-align:center;font-weight:bold;margin-top:14px;">Verified and Found Correct</p>
+        <table style="width:100%;margin-top:34px;"><tr>
+            <td style="width:50%;text-align:center;">________________________<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
+            <td style="width:50%;text-align:center;">________________________<br>District Inspector of Schools (S.E.),<br>${district}</td>
+        </tr></table>
+        <p style="margin-top:26px;">Memo No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <p>Copy forwarded for information and taking necessary action to:</p>
+        <ol style="font-size:.9rem;">
+            <li>The Headmaster/Headmistress/Teacher-in-Charge of ${fullSchool}</li>
+            <li>${sriSmt} ${staffName}; ${designation}; ${fullSchool}</li>
+        </ol>
+        <p style="text-align:right;margin-top:16px;">District Inspector of Schools (S.E.),<br>${district}</p>`;
+
+    /* ---------- DOC 9: NO-LITIGATION CERTIFICATE (NLC) ---------- */
+    const doc9 = `
+        <p style="text-align:center;font-weight:bold;">Certificate Regarding Non-Litigation Regarding Post and Appointment</p>
+        <p style="text-align:justify;margin-top:16px;">This is to certify that there is no court case or any form of litigation pending against the post and appointment of ${staffName}, who was appointed to the post of ${designation} with effect from ${casFmt(dojCurrentSchool)} at ${schoolName}. Accordingly, the application for approval of the ${milestoneWord.toLowerCase()} Fixation benefit in ${hisHer} favour is being submitted.</p>
+        <table style="width:100%;margin-top:40px;"><tr>
+            <td style="width:50%;">Date: ________________</td>
+            <td style="width:50%;text-align:right;">________________________<br>Headmaster/Headmistress/TIC<br>${schoolName}</td>
+        </tr></table>`;
+
+    /* ---------- DOC 10: FILE COVER SHEET ---------- */
+    const doc10 = `
+        <div style="text-align:center;line-height:1.7;font-size:.92rem;">
+            ${contactNo ? 'Contact No. ' + contactNo + '<br>' : ''}
+            ${email ? 'e-mail ID: ' + email + '<br>' : ''}
+            <strong style="font-size:1.1rem;">${schoolName}</strong><br>
+            ${schoolAddr}<br>
+            ${subDivision ? 'SUB DIVISION: ' + subDivision : ''}
+        </div>
+        <div style="text-align:center;margin-top:70px;">
+            <p style="font-weight:bold;font-size:1.15rem;">APPROVAL FOR ${milestoneWord} FIXATION BENEFIT</p>
+            <p>w.e.f. :: ${casFmt(effectDate)}</p>
+            <p style="margin-top:26px;">IN FAVOUR OF</p>
+            <p style="font-weight:bold;font-size:1.25rem;margin:4px 0;">${staffName}</p>
+            <p>DESIGNATION: ${designation}</p>
+        </div>`;
+
+    /* ---------- DOC 11: CERTIFICATE REGARDING STATUS OF SCHOOL ADMINISTRATION ---------- */
+    const doc11 = govType === 'MC' ? `
+        <p style="text-align:center;font-weight:bold;">Certificate Regarding Status of School Administration</p>
+        <p style="margin-top:16px;">Certified that:</p>
+        <ol style="line-height:1.8;">
+            <li>The valid Managing Committee of ${schoolName} has been functioning now.</li>
+            <li>The term of the valid Managing Committee is up to ${mcValidUpto}.</li>
+            <li>There is no Court case, legal bar, or any type of litigation regarding the reconstitution of the Managing Committee of ${schoolName}.</li>
+        </ol>
+        <table style="width:100%;margin-top:40px;"><tr>
+            <td style="width:50%;">Date: ________________</td>
+            <td style="width:50%;text-align:right;">________________________<br>Headmaster/Headmistress/TIC<br>${schoolName}</td>
+        </tr></table>` : `
+        <p style="text-align:center;font-weight:bold;">Certificate Regarding Status of School Administration</p>
+        <p style="margin-top:16px;">Certified that:</p>
+        <ol style="line-height:1.8;">
+            <li>The Administrator has been functioning now in this school.</li>
+            <li>There is no court case or any type of litigation against the appointment of the Administrator.</li>
+        </ol>
+        <table style="width:100%;margin-top:40px;"><tr>
+            <td style="width:50%;">Date: ________________</td>
+            <td style="width:50%;text-align:right;">________________________<br>Headmaster/Headmistress/TIC<br>${schoolName}</td>
+        </tr></table>`;
+
+    /* ---------- DOC 12: BENGALI M.C. RESOLUTION (only when Governance = Managing Committee) ---------- */
+    const doc12 = `
+        <p style="font-weight:bold;text-align:center;">পরিচালন সমিতির সভায় গৃহীত সিদ্ধান্ত</p>
+        <p>পরিচালন সমিতির সভাপতি মাননীয় ____________________ মহাশয় অদ্য সভায় সভাপতির আসন গ্রহণ করলে সভার কার্যক্রম শুরু হয়।</p>
+        <p style="text-align:justify;">সভায় অন্যতম আলোচ্য বিষয় ছিল এই স্কুলের ${designation}, মাননীয় ${staffName} মহাশয়/মহাশয়া কর্তৃক ${regimeName} এর অধীনে ${milestoneWordBn}ের একটানা চাকরি সম্পন্ন করার জন্য ক্যারিয়ার অ্যাডভান্সমেন্ট স্কিমের সুবিধা মঞ্জুর করার জন্য জমা দেওয়া আবেদন ও বিদ্যালয়ের মাননীয় Headmaster/Headmistress মহাশয়ের পেশ করা সংশ্লিষ্ট নথিপত্র যাচাই করে দেখা যায় যে ${staffName}, ${casFmt(doj)} তারিখ থেকে ${fullSchool} এ অনুমোদিত ${designation} হিসাবে নিরবচ্ছিন্ন এবং সন্তোষজনক চাকুরি করে চলেছেন${approvalNo ? ' [অনুমোদন নম্বর ' + approvalNo + ']' : ''}।</p>
+        <p style="text-align:justify;">ফলস্বরূপ, ${casFmt(doj)} তারিখ থেকে ধারাবাহিক চাকরির ভিত্তিতে ${casFmt(completionDate)} তারিখে তিনি পূর্ণ ${milestoneWordBn} নিরবচ্ছিন্ন এবং সন্তোষজনক চাকুরি সম্পন্ন করেছেন।</p>
+        <p style="text-align:justify;">এমতাবস্থায়, ${regimeName} এর অধীনে ${goRef} অনুসারে ও ${staffName} মহাশয়/মহাশয়ার আবেদনক্রমে তাঁর অনুকূলে ${milestoneWordBn}ের নিরবচ্ছিন্ন চাকুরি সম্পন্ন করার জন্য ক্যারিয়ার অ্যাডভান্সমেন্ট স্কিমের সুবিধা ${casFmt(effectDate)} তারিখ থেকে কার্যকর হবে। ${fixed.scaleLabel} স্কেলে উন্নীতকরণ তথা ${milestoneWord} Fixation-এর অনুমোদনের আবেদন District Inspector of Schools (S.E.), ${district} মহাশয়ের নিকট প্রেরণের সর্বসম্মত সিদ্ধান্ত গৃহীত হলো। এছাড়া উল্লেখযোগ্য যে, তাঁর সার্ভিস রেকর্ডে কোনো মামলা-মোকদ্দমা বা আপত্তি নেই।</p>
+        <p style="text-align:justify;">অদ্য সভায় বিদ্যালয়ের Headmaster/Headmistress মহাশয়কে প্রয়োজনীয় নথিপত্র ও আবেদনপত্র District Inspector of Schools (S.E.), ${district} অফিসে প্রেরণ করার ক্ষমতা ও দায়িত্ব অর্পণ করা হলো এবং অতি সত্বর এ বিষয়ে প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য অনুরোধ করা হলো।</p>
+        <p style="text-align:justify;">উপরোক্ত সিদ্ধান্তসমূহ অত্র সভায় সর্বসম্মতিক্রমে গৃহীত ও অনুমোদিত হলো। সভায় আর কোনো আলোচ্য বিষয় না থাকায় সভাপতি মহাশয়কে ধন্যবাদ জ্ঞাপনপূর্বক সভার কার্য সমাপ্ত করা হলো।</p>
+        <table style="width:100%;margin-top:30px;"><tr>
+            <td style="width:50%;">তারিখ: ${casFmt(optionDate)}</td>
+            <td style="width:50%;text-align:right;">সম্পাদক / সভাপতি<br>পরিচালন সমিতি</td>
+        </tr></table>`;
+
+    const docs = [
+        { title: 'Part A — Option &amp; Declaration (Staff)', body: doc1 },
+        { title: 'Part B — Fixation Proforma (by HOI)', body: doc2 },
+        { title: 'Declaration cum Application cum Option Letter (Staff → Administrator, through HM)', body: doc3 },
+        { title: 'HOI Report', body: doc4 },
+        { title: govType === 'MC' ? 'Managing Committee Resolution (English)' : 'Administrator Order', body: doc5 },
+        { title: 'Forwarding Letter to the District Inspector of Schools', body: doc6 },
+        { title: 'Final Acceptance / Finalization Request to the District Inspector of Schools', body: doc7 },
+        { title: "District Inspector's Office Memorandum (Final Order)", body: doc8 },
+        { title: 'No-Litigation Certificate (NLC)', body: doc9 },
+        { title: 'File Cover Sheet', body: doc10 },
+        { title: `Certificate Regarding Status of School Administration (${govType === 'MC' ? 'Managing Committee' : 'Administrator'})`, body: doc11 }
+    ];
+    if (govType === 'MC') {
+        docs.push({ title: 'পরিচালন সমিতির সিদ্ধান্ত — Bengali M.C. Resolution', body: doc12 });
+    }
+
+    window._casDocs = docs;
+
+    statusEl.style.color = '#065f46';
+    statusEl.textContent = `${milestoneWord} milestone detected under ${regimeName} (${goRef.split(',')[0]}). Existing pay ${existing.payLabel} → fixed at ${fixed.payLabel}, effective ${casFmt(effectDate)}. ${docs.length} documents generated below.`;
+
+    previewEl.innerHTML = `
+        <div class="btn-group" style="margin-bottom:12px;">
+            <button type="button" class="btn-print" onclick="casPrintAll()">Print All ${docs.length} Documents</button>
+        </div>
+        ${docs.map((d, i) => `
+            <div style="border:1px solid #cbd5e1;border-radius:8px;padding:18px 22px;margin-bottom:16px;background:#fff;font-family:'Times New Roman',Times,serif;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;">
+                    <strong style="font-family:Arial,sans-serif;font-size:.9rem;color:#1e3a8a;">${i + 1}. ${d.title}</strong>
+                    <button type="button" class="btn-print" style="padding:5px 12px;font-size:.75rem;" onclick="casPrintOne(${i})">Print</button>
+                </div>
+                <div style="font-size:.92rem;line-height:1.55;">${d.body}</div>
+            </div>`).join('')}
+    `;
+}
+
+function casPrintWindowShell(innerHtml, title) {
+    const w = window.open('', '_blank');
+    w.document.write(`<!DOCTYPE html><html><head><title>${title}</title><meta charset="utf-8">
+        <style>
+            @page { size: A4 portrait; margin: 18mm 16mm; }
+            body { font-family: 'Times New Roman', Times, serif; font-size: 12.5pt; color:#000; line-height:1.5; }
+            .cas-doc-page { page-break-after: always; padding-bottom: 10mm; }
+            .cas-doc-page:last-child { page-break-after: auto; }
+            p { margin: 6px 0; }
+            table { border-collapse: collapse; }
+        </style></head><body>${innerHtml}</body></html>`);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 300);
+}
+
+function casPrintOne(i) {
+    const d = window._casDocs && window._casDocs[i];
+    if (!d) return;
+    casPrintWindowShell(`<div class="cas-doc-page">${d.body}</div>`, d.title);
+}
+
+function casPrintAll() {
+    const docs = window._casDocs || [];
+    if (!docs.length) return;
+    casPrintWindowShell(docs.map(d => `<div class="cas-doc-page">${d.body}</div>`).join(''), 'CAS Documents');
+}
 </script>
 
 </body>
