@@ -199,10 +199,10 @@
                 text-align: center;
                 page-break-inside: avoid;
             }
-            .cas-file-cover .cover-school { font-size: 20pt !important; font-weight: 900; }
-            .cas-file-cover .cover-title { font-size: 27pt !important; font-weight: 900; letter-spacing: 1.2px; }
-            .cas-file-cover .cover-name { font-size: 24pt !important; font-weight: 900; }
-            .cas-file-cover .cover-meta { font-size: 13pt !important; }
+            .cas-file-cover .cover-school { font-size: 24pt !important; font-weight: 900; }
+            .cas-file-cover .cover-title { font-size: 32pt !important; font-weight: 900; letter-spacing: 1.2px; }
+            .cas-file-cover .cover-name { font-size: 29pt !important; font-weight: 900; }
+            .cas-file-cover .cover-meta { font-size: 16pt !important; }
 
             .cas-pay-structure { font-family:'Times New Roman', Times, serif; color:#000; width:100%; }
             .cas-pay-structure .ps-title { text-align:center; font-size:16pt; font-weight:900; line-height:1.25; text-transform:uppercase; }
@@ -2233,7 +2233,7 @@ window.addEventListener('DOMContentLoaded', function(){
    existing calculation, table, or print flow.
    ========================================================================= */
 
-const CAS_EMBLEM_B64 = "data:image/png;base64,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";
+const CAS_EMBLEM_B64 = "data:image/png;base64,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";
 const CAS_GO_REF = {
     '98': 'U/M No. 25-SE(B) dt. 12.02.1999, as per ROPA-1998',
     '09': 'G.O. No. 46-SE(B) dated 27.02.2009 read with G.O. No. 1B1-SE(B) dated 10.02.2009 and para-I of G.O. 30-SE(B) dated 10.02.2010, as per ROPA-2009',
@@ -2437,7 +2437,10 @@ function casBuildPayStructureDoc(type, cutoffDate, staffName, designation, schoo
 
     const htmlRows = [];
     const pushRows = (rows, regimeLabel) => rows.forEach(r => {
-        let remarks = r.label || '';
+        // Omit leave dates: the Pay Structure "Remarks" column should not show
+        // the ML/HPL/LWP/"NO LEAVE" leave-account annotation that other tables
+        // append to row.label — strip that trailing note before display.
+        let remarks = (r.label || '').replace(/<br>\s*<span style="font-weight:400;font-size:\.78em;color:#334155;">.*?<\/span>\s*$/, '');
         const upper = remarks.toUpperCase();
         if (upper.includes('10 YEARS')) remarks = '<strong>10 YEARS</strong>';
         else if (upper.includes('18 YEARS')) remarks = '<strong>18 YEARS</strong>';
@@ -2510,13 +2513,26 @@ function generateCasDocuments(type) {
 
     const { regime, row: msRow, prevRow, nextRow } = detected;
     const effectDate = new Date(msRow.date);
-    // For a CAS benefit taking effect on 01 July, the qualifying service is
-    // completed on 30 June.  The EXISTING PAY used in fixation and in the
-    // District Inspector's memorandum must therefore be the pay actually
-    // drawn on 30 June, NOT the pay after the 01-July normal increment.
-    const completionDate = new Date(effectDate);
+    // IMPORTANT: service-completion date and CAS effective date are different.
+    // The actual service-completion date is one day before the ORIGINAL
+    // milestone/anniversary date.  For Window-A (02-Jan to 30-Jun), the
+    // effective date may shift to 01-Jul, but the completion date MUST NOT
+    // shift to 30-Jun. Example: DOJ 24-01-2008 -> 18 years completed on
+    // 23-01-2026; CAS effective date -> 01-07-2026.
+    // ALWAYS derive the actual service anniversary from the entered FIRST DOJ.
+    // Never derive service completion from the shifted 01-July effective date.
+    // Example: DOJ 24-01-2008 + 18 years = 24-01-2026; service is completed
+    // on 23-01-2026.  If the anniversary is in the 02-Jan to 30-Jun window,
+    // the CAS effective date may move to 01-07-2026, but completion stays 23-01-2026.
+    const milestoneYears = parseInt(type, 10) || 0;
+    const actualMilestoneDate = new Date(doj.getFullYear() + milestoneYears, doj.getMonth(), doj.getDate());
+    const completionDate = new Date(actualMilestoneDate);
     completionDate.setDate(completionDate.getDate() - 1);
-    const nextIncrementDate = nextRow ? new Date(nextRow.date) : new Date(effectDate.getFullYear() + 1, 6, 1);
+    const isWindowA = actualMilestoneDate.getMonth() >= 0 && actualMilestoneDate.getMonth() <= 5 &&
+        !(actualMilestoneDate.getMonth() === 0 && actualMilestoneDate.getDate() === 1);
+    const nextIncrementDate = (isWindowA && effectDate.getMonth() === 6 && effectDate.getDate() === 1)
+        ? new Date(effectDate)
+        : (nextRow ? new Date(nextRow.date) : new Date(effectDate.getFullYear() + 1, 6, 1));
 
     // The existing pay for fixation is the pay actually drawn on the day
     // immediately BEFORE the CAS effective date.  Do not use the 01-July
@@ -2551,6 +2567,9 @@ function generateCasDocuments(type) {
         !String(r.label || '').toUpperCase().includes('18 YEARS') &&
         !String(r.label || '').toUpperCase().includes('20 YEARS')) || null;
     const normalIncrementRow = sameDateNormalRow || null;
+    const memoEffectDate = (type === '18' && regime === '19' && normalIncrementRow)
+        ? new Date(normalIncrementRow.date) : effectDate;
+    const memoDni = (type === '18' && regime === '19') ? new Date(memoEffectDate.getFullYear() + 1, 6, 1) : nextIncrementDate;
     const existingNumForFixation = parseInt(String(existing.basicDisplay || '0').replace(/,/g, ''), 10) || 0;
     const normalNumForFixation = normalIncrementRow ? parseInt(String(normalIncrementRow.basicDisplay || '0').replace(/,/g, ''), 10) || 0 : existingNumForFixation;
     const normalIncrementAmount = Math.max(0, normalNumForFixation - existingNumForFixation);
@@ -2612,7 +2631,7 @@ function generateCasDocuments(type) {
         <p style="text-align:center;font-weight:bold;font-size:1.02rem;margin-bottom:2px;">PROFORMA FOR OPTION &amp; FIXATION OF PAY FOR CAS FOR ${milestoneWord} UNDER ${regimeName}</p>
         <p style="text-align:center;font-size:.85rem;margin-top:0;">(For availing the benefit in terms of ${goRef})</p>
         <p style="font-weight:bold;margin-top:18px;">PART - A : OPTION (to be filled in by the incumbent)</p>
-        <p>I do hereby opt to avail the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service under ${regimeName}, with effect from ${casFmt(effectDate)}, i.e. w.e.f. my date of entitlement.</p>
+        <p>I do hereby opt to avail the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service under ${regimeName}, with effect from ${casFmt(effectDate)}, i.e. w.e.f. ${isWindowA ? 'my date of next increment' : 'my date of entitlement'}.</p>
         <p><strong>Declaration.</strong> I hereby undertake to refund to the Government any amount which may be drawn by me in excess of what is admissible to me on account of erroneous fixation of pay in the revised pay structure, as soon as the fact of such excess drawal comes / is brought to my notice.</p>
         <table style="width:100%;margin-top:24px;"><tr>
             <td style="width:50%;">Date: ${casFmt(optionDate)}<br>Station: ${schoolName}</td>
@@ -2631,7 +2650,7 @@ function generateCasDocuments(type) {
         ['8', 'Existing Basic Pay' + (existing.cellLabel ? ' &amp; Cell' : ''), existing.payLabel + (existing.cellLabel ? ' [Cell-' + existing.cellLabel + ']' : '')],
         ['9', 'Basic Pay Fixed at', fixed.payLabel + (fixed.cellLabel ? ' [Cell-' + fixed.cellLabel + ']' : '') + '<br><span style="font-size:.85rem;">In the pay Level/Scale: ' + fixed.scaleLabel + '</span>'],
         ['10', 'Date of Effect', casFmt(effectDate)],
-        ['11', 'Date of Next Increment', casFmt(nextIncrementDate)]
+        ['11', 'Date of Next Increment', casFmt(memoDni)]
     ];
     const doc2 = `
         <p style="text-align:center;font-weight:bold;">PART - B : FIXATION (to be filled in by the HOI)</p>
@@ -2650,7 +2669,7 @@ function generateCasDocuments(type) {
         <p>To<br>${authorityRecipient}<br>Through the ${hoiStatus},<br>${schoolName}<br>${schoolAddr}</p>
         <p style="margin-top:16px;"><strong>Subject:</strong> Declaration cum Application cum Option for availing the benefit of Career Advancement Scheme for completion of ${milestoneWord} continuous service under ${regimeName}.</p>
         <p style="text-align:justify;"><strong>I, ${sriSmt} ${staffName}, ${designation},</strong> hereby state that I have joined service on ${casFmt(doj)} and have completed a full ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}. ${priorSchools.length ? `My service history, including my previous school service, is as follows: ${priorSchools.map((s, i) => `${s.name} (${casFmt(s.doj || (i === 0 ? doj : null))} to ${s.dol ? casFmt(s.dol) : 'till date'})`).join('; ')}. I am presently serving at ${fullSchool} since ${casFmt(dojCurrentSchool)}.` : `I am serving continuously and satisfactorily at ${fullSchool}.`}</p>
-        <p style="text-align:justify;">Hence, in terms of ${regimeName}, vide ${goRef}, I do hereby opt to avail the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service with effect from ${casFmt(effectDate)}, i.e. w.e.f. my date of entitlement.</p>
+        <p style="text-align:justify;">Hence, in terms of ${regimeName}, vide ${goRef}, I do hereby opt to avail the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service with effect from ${casFmt(effectDate)}, i.e. w.e.f. ${isWindowA ? 'my date of next increment' : 'my date of entitlement'}.</p>
         <p style="text-align:justify;">I therefore request ${authorityShort} to kindly take necessary arrangements to accord approval from the end of the ${diOffice} ${district} in my favour for availing the ${milestoneWord.toLowerCase()} pay-fixation benefit w.e.f. ${casFmt(effectDate)} as per ${regimeName} rules.</p>
         <p style="text-align:justify;">I further state that my present Basic Pay is ${existing.payLabel} in the pay scale/level ${existing.scaleLabel}.</p>
         <p style="text-align:justify;">I hereby undertake to refund to the Government any amount which may be drawn by me in excess of what is admissible to me on account of erroneous fixation of pay in the revised pay structure, as soon as the fact of such excess drawal comes / is brought to my notice.</p>
@@ -2682,19 +2701,19 @@ function generateCasDocuments(type) {
             <tr><td style="padding:4px;">Existing Pay</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${existing.payLabel}${existing.cellLabel ? ' [Cell-'+existing.cellLabel+']' : ''}; ${existing.scaleLabel}</td></tr>
             <tr><td style="padding:4px;">Pay to be Fixed at</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${fixed.payLabel}${fixed.cellLabel ? ' [Cell-'+fixed.cellLabel+']' : ''}; ${fixed.scaleLabel}</td></tr>
             <tr><td style="padding:4px;">Date of Effect</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(effectDate)}</td></tr>
-            <tr><td style="padding:4px;">Date of Next Increment</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(nextIncrementDate)}</td></tr>
+            <tr><td style="padding:4px;">Date of Next Increment</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(memoDni)}</td></tr>
         </table>
         <p style="margin-top:12px;">The ${hoiStatus} of this school is requested to take necessary steps in this regard.</p>
         <p style="text-align:right;margin-top:40px;">________________________<br>Secretary / President, Managing Committee</p>` : `
         <p style="font-weight:bold;">Administrator Order</p>
         <p>Order No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
         <p style="text-align:justify;">As per the ${hoiStatus} report in connection with the application submitted by ${staffName}, ${designation} of this school, for allowing in ${hisHer} favour the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, and thereafter verifying related school documents, it is seen that ${serviceNarrative.charAt(0).toLowerCase() + serviceNarrative.slice(1)} It is also seen that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
-        <p style="text-align:justify;">Hence, in terms of ${goRef}, it is hereby approved and passed for allowing ${himHer} the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, with effect from ${casFmt(effectDate)}, i.e. w.e.f. ${hisHer} date of entitlement. ${hisHer[0].toUpperCase()+hisHer.slice(1)} following proposed pay details are also approved and passed:</p>
+        <p style="text-align:justify;">Hence, in terms of ${goRef}, it is hereby approved and passed for allowing ${himHer} the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, with effect from ${casFmt(effectDate)}, i.e. w.e.f. ${isWindowA ? hisHer + ' date of next increment' : hisHer + ' date of entitlement'}. ${hisHer[0].toUpperCase()+hisHer.slice(1)} following proposed pay details are also approved and passed:</p>
         <table style="width:100%;border-collapse:collapse;margin-top:8px;">
             <tr><td style="padding:4px;">Existing Pay</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${existing.payLabel}${existing.cellLabel ? ' [Cell-'+existing.cellLabel+']' : ''}; ${existing.scaleLabel}</td></tr>
             <tr><td style="padding:4px;">Pay to be Fixed at</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${fixed.payLabel}${fixed.cellLabel ? ' [Cell-'+fixed.cellLabel+']' : ''}; ${fixed.scaleLabel}</td></tr>
             <tr><td style="padding:4px;">Date of Effect</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(effectDate)}</td></tr>
-            <tr><td style="padding:4px;">Date of Next Increment</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(nextIncrementDate)}</td></tr>
+            <tr><td style="padding:4px;">Date of Next Increment</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(memoDni)}</td></tr>
         </table>
         <p style="margin-top:12px;">The ${hoiStatus} of this school is requested to take necessary steps in this regard.</p>
         <p style="text-align:right;margin-top:40px;">________________________<br>The Administrator</p>`;
@@ -2719,7 +2738,7 @@ function generateCasDocuments(type) {
             <li>Photocopies of all approvals, including 1st approval</li>
             <li>Triplicate copies of the ${milestoneWord.toLowerCase()} fixation proforma (Part-B)</li>
             <li>Pay structure from 1st joining to date</li>
-            <li>Photocopy of up-to-date Service Book with Leave Account</li>
+            <li>Attested photocopy of updated Service Book with updated leave account and B.Ed details (if applicable)</li>
             <li>Photocopy of prior option/fixation orders (ROPA-2009 &amp; 2019, as applicable)</li>
             <li>Photocopy of educational qualification certificates/mark-sheets</li>
             <li>Photocopy of current month's pay slip</li>
@@ -2728,6 +2747,7 @@ function generateCasDocuments(type) {
             <li>Joining Report (all service)</li>
             <li>Appointment letter / transfer order (all service)</li>
             <li>S.S.C. recommendation (all service)</li>
+            <li>Date of Next Increment</li>
             <li>Certificate of reason for delay (if applicable)</li>
         </ol>`;
 
@@ -2754,16 +2774,18 @@ function generateCasDocuments(type) {
     // increment on 01-07-YYYY, then the additional 18-year increment and
     // final Level-12 fitment.  The final fitment value itself remains the
     // detected 18-year milestone value.
-    const memoEffectDate = (type === '18' && regime === '19' && normalIncrementRow)
-        ? new Date(normalIncrementRow.date) : effectDate;
-    const memoCompletionDate = new Date(memoEffectDate);
-    memoCompletionDate.setDate(memoCompletionDate.getDate() - 1);
+    // The DI memorandum has TWO dates with different meanings:
+    // (1) actual service completion date = completionDate;
+    // (2) existing-pay snapshot = the day immediately before the fixation
+    // date (normally 30-06-YYYY when fixation is 01-07-YYYY).
+    const memoExistingPayDate = new Date(memoEffectDate);
+    memoExistingPayDate.setDate(memoExistingPayDate.getDate() - 1);
 
     let memoExistingRow = existingRow;
     if (type === '18' && regime === '19') {
         memoExistingRow = null;
         for (const r of regimeRows) {
-            if (r && r.date instanceof Date && r.date.getTime() <= memoCompletionDate.getTime()) {
+            if (r && r.date instanceof Date && r.date.getTime() <= memoExistingPayDate.getTime()) {
                 memoExistingRow = r;
             }
         }
@@ -2791,13 +2813,13 @@ function generateCasDocuments(type) {
             <div style="border-bottom:1px solid #000;margin:4px auto 0;width:96%;"></div>
             <div class="di-memo" style="text-decoration:underline;font-weight:bold;margin-top:6px;">OFFICE MEMORANDUM</div>
         </div>
-        <p style="text-align:justify;margin-top:12px;">${serviceNarrative} As per resolution adopted in the ${govType === 'MC' ? 'Managing Committee' : 'Administrator'} of the said school vide ${govOrderWord} No. ${resolutionNo}, it reveals that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(memoCompletionDate)}.</p>
+        <p style="text-align:justify;margin-top:12px;">${serviceNarrative} As per resolution adopted in the ${govType === 'MC' ? 'Managing Committee' : 'Administrator'} of the said school vide ${govOrderWord} No. ${resolutionNo}, it reveals that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
         <p style="text-align:justify;">In terms of ${regimeName}, vide ${goRef}, ${sriSmt} ${staffName}, ${designation} of the said school, is hereby allowed to draw the raised pay in ${fixed.scaleLabel}${fixed.cellLabel ? ' [' + fixed.cellLabel + ']' : ''} w.e.f. ${casFmt(memoEffectDate)} as per ${hisHer} option, for completion of ${milestoneWord.toLowerCase()} continuous and satisfactory service. ${hisHer[0].toUpperCase() + hisHer.slice(1)} pay is hereby fixed in the following manner.</p>
-        <p style="margin:10px 0 2px;">1. ${hisHer[0].toUpperCase() + hisHer.slice(1)} existing Basic Pay as on ${casFmt(memoCompletionDate)} in the ${memoExisting.scaleLabel}${memoExisting.cellLabel ? ' in CELL-' + memoExisting.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${existingNum.toLocaleString('en-IN')}</strong></p>
+        <p style="margin:10px 0 2px;">1. ${hisHer[0].toUpperCase() + hisHer.slice(1)} existing Basic Pay as on ${casFmt(memoExistingPayDate)} in the ${memoExisting.scaleLabel}${memoExisting.cellLabel ? ' in CELL-' + memoExisting.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${existingNum.toLocaleString('en-IN')}</strong></p>
         <p style="margin:10px 0 2px;">2.a) Allowed Normal Increment [if required] &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${normalIncrementAmountForMemo.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${normalPayNum.toLocaleString('en-IN')} in LEVEL-11 ]</span></p>
         <p style="margin:2px 0 2px;white-space:nowrap;">&nbsp;&nbsp;&nbsp;b) Allowed one Addl. Increment for completion of ${milestoneWord.toLowerCase()} Service &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${nextPayDetails.amount.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${nextPayDetails.nextPay.toLocaleString('en-IN')} in LEVEL-11 ]</span></p>
         <p style="margin:2px 0 10px;">&nbsp;&nbsp;&nbsp;c) Pay finally fixed w.e.f. ${casFmt(memoEffectDate)} in the ${fixed.scaleLabel}${fixed.cellLabel ? ' in CELL-' + fixed.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${fixedNum.toLocaleString('en-IN')}</strong></p>
-        <p style="font-weight:bold;">Date of Next Increment: ${casFmt((type === '18' && regime === '19') ? new Date(memoEffectDate.getFullYear() + 1, 6, 1) : nextIncrementDate)}</p>
+        <p style="font-weight:bold;">Date of Next Increment: ${casFmt(memoDni)}</p>
         <p style="text-align:center;font-weight:bold;margin-top:10px;">Verified and Found Correct</p>
         <table style="width:100%;margin-top:26px;"><tr>
             <td style="width:50%;text-align:center;">________________________<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
@@ -2882,6 +2904,36 @@ function generateCasDocuments(type) {
 
     const payStructureDoc = casBuildPayStructureDoc(type, effectDate, staffName, designation, schoolName, schoolAddr, doj);
 
+    /* ---------- DOC 13: CAS CHECK LIST ---------- */
+    const doc13 = `
+        <div style="font-family:'Times New Roman',Times,serif;">
+        <h2 style="text-align:center;text-decoration:underline;margin-bottom:4px;">CHECK LIST FOR ${milestoneWord} CAS FIXATION</h2>
+        <p style="text-align:center;font-weight:bold;margin-top:0;">${staffName} ; ${designation} ; ${schoolName}</p>
+        <table style="width:100%;border-collapse:collapse;font-size:.92rem;">
+          <tr><th style="border:1px solid #000;padding:5px;width:8%;">Sl.</th><th style="border:1px solid #000;padding:5px;text-align:left;">Document / Record</th><th style="border:1px solid #000;padding:5px;width:18%;">Checked</th></tr>
+          ${[
+            'Forwarding letter of the HOI',
+            'Incumbent\'s application (Part-A)',
+            'Photocopy of M.C. Resolution / Administrator\'s Order',
+            'Photocopies of all approvals, including 1st approval',
+            `Triplicate copies of the ${milestoneWord.toLowerCase()} fixation proforma (Part-B)`,
+            'Pay structure from 1st joining to date',
+            'Attested photocopy of updated Service Book with updated leave account and B.Ed details (if applicable)',
+            'Photocopy of prior option/fixation orders (ROPA-2009 & 2019, as applicable)',
+            'Photocopy of educational qualification certificates/mark-sheets',
+            'Photocopy of current month\'s pay slip',
+            'No Litigation Certificate',
+            'M.C. Validity Certificate',
+            'Joining Report (all service)',
+            'Appointment letter / transfer order (all service)',
+            'S.S.C. recommendation (all service)',
+            'Date of Next Increment',
+            'Certificate of reason for delay (if applicable)'
+          ].map((x,i)=>`<tr><td style="border:1px solid #000;padding:5px;text-align:center;">${i+1}</td><td style="border:1px solid #000;padding:5px;">${x}</td><td style="border:1px solid #000;padding:5px;text-align:center;">☐</td></tr>`).join('')}
+        </table>
+        <table style="width:100%;margin-top:30px;"><tr><td>Date: ________________</td><td style="text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td></tr></table>
+        </div>`;
+
     const docs = [
         { title: 'Part A — Option &amp; Declaration (Staff)', body: doc1 },
         { title: 'Part B — Fixation Proforma (by HOI)', body: doc2 },
@@ -2894,7 +2946,8 @@ function generateCasDocuments(type) {
         { title: 'No-Litigation Certificate (NLC)', body: doc9 },
         { title: `Pay Structure — ${milestoneWord}`, body: payStructureDoc, landscape: true },
         { title: 'File Cover Sheet', body: doc10 },
-        { title: `Certificate Regarding Status of School Administration (${govType === 'MC' ? 'Managing Committee' : 'Administrator'})`, body: doc11 }
+        { title: `Certificate Regarding Status of School Administration (${govType === 'MC' ? 'Managing Committee' : 'Administrator'})`, body: doc11 },
+        { title: `CAS Check List — ${milestoneWord}`, body: doc13 }
     ];
     if (govType === 'MC') {
         docs.push({ title: 'পরিচালন সমিতির সিদ্ধান্ত — Bengali M.C. Resolution', body: doc12 });
