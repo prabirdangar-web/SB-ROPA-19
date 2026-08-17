@@ -2322,9 +2322,8 @@ function generateCasDocuments(type) {
     const prevSchool = document.getElementById('casPrevSchool').value || '';
     const dojCurrentSchoolVal = document.getElementById('casDojCurrentSchool').value;
     const priorSchoolsForDefault = casGetPriorSchools();
-    const defaultCurrentDoj = priorSchoolsForDefault.length && priorSchoolsForDefault[priorSchoolsForDefault.length - 1].dol
-        ? priorSchoolsForDefault[priorSchoolsForDefault.length - 1].dol
-        : doj;
+    const lastPriorDol = priorSchoolsForDefault.length ? priorSchoolsForDefault[priorSchoolsForDefault.length - 1].dol : null;
+    const defaultCurrentDoj = lastPriorDol ? addDays(lastPriorDol, 1) : doj;
     const dojCurrentSchool = dojCurrentSchoolVal ? new Date(dojCurrentSchoolVal + 'T00:00:00') : defaultCurrentDoj;
     const optionDateVal = document.getElementById('casOptionDate').value;
     const optionDate = optionDateVal ? new Date(optionDateVal + 'T00:00:00') : new Date();
