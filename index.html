@@ -1805,4 +1805,1373 @@ function showStatus(msg, isError){
   if(el){
     el.style.color = isError ? '#dc2626' : '#059669';
     el.textContent = msg;
-    try{ el.scrollIntoView({block:'nearest'}); }catch(e){ /* ignore */
+    try{ el.scrollIntoView({block:'nearest'}); }catch(e){ /* ignore */ }
+  } else {
+    console.log(msg);
+  }
+}
+
+function fmt(d){
+  if(!d) return '-';
+  const dt = new Date(d+'T00:00:00');
+  const dd = String(dt.getDate()).padStart(2,'0');
+  const mm = String(dt.getMonth()+1).padStart(2,'0');
+  return `${dd}-${mm}-${dt.getFullYear()}`;
+}
+function daysBetween(from,to){
+  const f = new Date(from+'T00:00:00');
+  const t = new Date(to+'T00:00:00');
+  return Math.round((t-f)/86400000)+1;
+}
+
+let periods = [];
+let masterMlEntries = [];
+let transferEvents = [];
+let idCounter = 1;
+
+const EL_ANNUAL_RATE = 15;
+const HPL_ANNUAL_RATE = 15;
+const EL_CAP = 365;
+const HPL_CAP = 60;
+
+function syncLeaveUpToDate(){
+  const el = document.getElementById('leaveUpToDate');
+  if(!el) return;
+  if(el.dataset.userSet==='1') return;
+  const dor = getDOR();
+  if(dor) el.value = toISO(dor);
+}
+
+function addPeriodRow(){
+  const last = periods[periods.length-1];
+  const nextFrom = last ? toISO(new Date(new Date(last.to+'T00:00:00').getTime()+86400000)) : '';
+  periods.push({from:nextFrom, to:'', vacFrom:'', vacTo:'', earnedAvg:0, earnedHalf:0, vacDetEarn:0,
+    creditAvgManual:null, creditHalfManual:null, vacDetCredit:0,
+    maternityFull:0, maternityHalf:0, lwp:0, specialFull:0, specialHalf:0, mlEntries:[]});
+  assignMlEntries();
+  renderAll();
+}
+function deletePeriodRow(i){
+  periods.splice(i,1);
+  assignMlEntries();
+  renderAll();
+}
+function updatePeriodField(i, field, value){
+  periods[i][field] = value;
+  assignMlEntries();
+  renderAll();
+}
+
+function toggleTransferUI(){
+  const val = document.getElementById('hasTransfer').value;
+  document.getElementById('transferInputSection').style.display = (val==='yes') ? '' : 'none';
+}
+function addTransferEvent(){
+  const date = document.getElementById('transferDate').value;
+  if(!date){ showStatus('Please pick the new school joining date.', true); return; }
+  transferEvents.push({id:idCounter++, date});
+  transferEvents.sort((a,b)=> new Date(a.date)-new Date(b.date));
+  document.getElementById('transferDate').value='';
+  renderAll();
+}
+function deleteTransferEvent(id){
+  transferEvents = transferEvents.filter(t=>t.id!==id);
+  renderAll();
+}
+
+function addYears(date, years){
+  const d = new Date(date.getTime());
+  d.setFullYear(d.getFullYear()+years);
+  return d;
+}
+function toISO(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+function autoGenerateRows(){
+  const dojVal = document.getElementById('doj').value;
+  const dorVal = document.getElementById('leaveUpToDate').value;
+  if(!dojVal || !dorVal){ showStatus('Please set Date of Joining in Section 1, and a "Generate rows up to" date above.', true); return; }
+  const dojDate = new Date(dojVal+'T00:00:00');
+  const dorDate = new Date(dorVal+'T00:00:00');
+  if(dorDate <= dojDate){ showStatus('The "Generate rows up to" date must be after DOJ.', true); return; }
+
+  const hasTransfer = document.getElementById('hasTransfer').value === 'yes';
+  if(hasTransfer && transferEvents.length===0){
+    showStatus('You selected "Yes - transferred" but haven\'t added a transfer date yet. Please add one, or switch back to "No" if there was none.', true);
+    return;
+  }
+
+  let breakpoints = [];
+  let k = 1;
+  while(true){
+    const anniv = addYears(dojDate, k);
+    if(anniv > dorDate) break;
+    breakpoints.push(anniv.getTime());
+    k++;
+  }
+  if(hasTransfer){
+    transferEvents.forEach(t=>{
+      const td = new Date(t.date+'T00:00:00');
+      if(td > dojDate && td < dorDate) breakpoints.push(td.getTime());
+    });
+  }
+
+  breakpoints = [...new Set(breakpoints)].sort((a,b)=>a-b).map(t=>new Date(t));
+
+  const rowStarts = [dojDate, ...breakpoints];
+  const openingAvg = Math.round(parseFloat(document.getElementById('openingAvg').value)) || 0;
+  const openingHalf = Math.round(parseFloat(document.getElementById('openingHalf').value)) || 0;
+
+  const newPeriods = rowStarts.map((start,i)=>{
+    const end = (i+1<rowStarts.length) ? new Date(rowStarts[i+1].getTime()-86400000) : dorDate;
+    const days = daysBetween(toISO(start), toISO(end));
+    const earnedAvg = Math.round( (days/365)*EL_ANNUAL_RATE );
+    const earnedHalf = Math.round( (days/365)*HPL_ANNUAL_RATE );
+    return {
+      from: toISO(start), to: toISO(end), vacFrom:'', vacTo:'',
+      earnedAvg, earnedHalf, vacDetEarn:0,
+      creditAvgManual: i===0 ? openingAvg : null,
+      creditHalfManual: i===0 ? openingHalf : null,
+      vacDetCredit:0,
+      maternityFull:0, maternityHalf:0, lwp:0, specialFull:0, specialHalf:0,
+      mlEntries:[]
+    };
+  });
+
+  periods = newPeriods;
+  assignMlEntries();
+  renderAll();
+  showStatus(`Generated ${newPeriods.length} Period of Duty rows from ${fmt(toISO(dojDate))} to ${fmt(toISO(dorDate))}.`, false);
+}
+
+function addMlEntry(){
+  const type = document.getElementById('mlType').value;
+  const from = document.getElementById('mlFrom').value;
+  const to = document.getElementById('mlTo').value;
+  if(!from || !to){ showStatus('Please enter both From and To dates.', true); return; }
+  if(new Date(to) < new Date(from)){ showStatus('"To" date must not be before "From" date.', true); return; }
+
+  masterMlEntries.push({id:idCounter++, from, to, type});
+  const assigned = assignMlEntries();
+
+  if(!assigned.has(masterMlEntries[masterMlEntries.length-1].id)){
+    masterMlEntries.pop();
+    showStatus('These dates do not fall within any existing Period of Duty row. Please add/extend a period row (or Auto-Generate rows) to cover this date range first.', true);
+    return;
+  }
+
+  document.getElementById('mlFrom').value='';
+  document.getElementById('mlTo').value='';
+  renderAll();
+  const typeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', lwp_effect:'LWP (with CAS effect)', lwp_noeffect:'LWP (no CAS effect)'}[type] || type;
+  showStatus(`${typeLabel} entry added: ${fmt(from)} to ${fmt(to)}.`, false);
+}
+
+function annotateAllTablesWithLeave(tables){
+  if(!tables || !Array.isArray(tables)) return;
+  const typeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', lwp_effect:'LWP (affects CAS)', lwp_noeffect:'LWP (no CAS effect)'};
+
+  tables.forEach(t=>{
+    (t.rows||[]).forEach((row,idx)=>{ row._lineNum = idx+1; row._leaveNotes = []; });
+  });
+
+  const firstSeen = {};
+  masterMlEntries.forEach(entry=>{
+    const eFrom = new Date(entry.from+'T00:00:00');
+    const eTo = new Date(entry.to+'T00:00:00');
+    tables.forEach(t=>{
+      (t.rows||[]).forEach(row=>{
+        if(!row.date || !row.dot) return;
+        const overlapStart = eFrom > row.date ? eFrom : row.date;
+        const overlapEnd = eTo < row.dot ? eTo : row.dot;
+        if(overlapStart <= overlapEnd){
+          if(!firstSeen[entry.id]){
+            const segDays = daysBetween(toISO(overlapStart), toISO(overlapEnd));
+            const label = typeLabel[entry.type] || entry.type;
+            const dateStr = overlapStart.getTime()===overlapEnd.getTime()
+              ? fmt(toISO(overlapStart))
+              : `${fmt(toISO(overlapStart))} to ${fmt(toISO(overlapEnd))}`;
+            row._leaveNotes.push(`${label} ${dateStr} [${segDays}d]`);
+            firstSeen[entry.id] = {table:t.key, line: row._lineNum};
+          } else {
+            const first = firstSeen[entry.id];
+            const ref = (first.table===t.key)
+              ? `ALREADY NOTED IN LINE ${first.line}`
+              : `ALREADY NOTED IN ${first.table} LINE ${first.line}`;
+            row._leaveNotes.push(ref);
+          }
+        }
+      });
+    });
+  });
+
+  tables.forEach(t=>{
+    (t.rows||[]).forEach(row=>{
+      const notes = row._leaveNotes.length ? [...new Set(row._leaveNotes)] : ['NO LEAVE'];
+      row.label = (row.label ? row.label + '<br>' : '')
+        + '<span style="font-weight:400;font-size:.78em;color:#334155;">' + notes.join('; ') + '</span>';
+    });
+  });
+}
+
+function deleteMlEntry(masterId){
+  masterMlEntries = masterMlEntries.filter(e=>e.id!==masterId);
+  assignMlEntries();
+  renderAll();
+}
+
+function assignMlEntries(){
+  periods.forEach(p=> { p.mlEntries = []; p.lwp = 0; });
+  const matchedIds = new Set();
+  masterMlEntries.forEach(entry=>{
+    const leaveFrom = new Date(entry.from+'T00:00:00');
+    const leaveTo = new Date(entry.to+'T00:00:00');
+    const totalDays = daysBetween(entry.from, entry.to);
+    const totalDebit = (entry.type==='half') ? Math.ceil(totalDays/2) : (entry.type==='avg' ? totalDays : 0);
+    periods.forEach(p=>{
+      if(!p.from || !p.to) return;
+      const pFrom = new Date(p.from+'T00:00:00');
+      const pTo = new Date(p.to+'T00:00:00');
+      const overlapStart = leaveFrom > pFrom ? leaveFrom : pFrom;
+      const overlapEnd = leaveTo < pTo ? leaveTo : pTo;
+      if(overlapStart <= overlapEnd){
+        matchedIds.add(entry.id);
+        const segFrom = toISO(overlapStart);
+        const segTo = toISO(overlapEnd);
+        const segDays = daysBetween(segFrom, segTo);
+        const segDebit = (segDays===totalDays) ? totalDebit : Math.round(totalDebit * segDays/totalDays);
+        p.mlEntries.push({id:entry.id, from:segFrom, to:segTo, type:entry.type, days:segDays, debitDays:segDebit});
+        if(entry.type==='lwp_effect' || entry.type==='lwp_noeffect'){
+          p.lwp = (p.lwp||0) + segDays;
+        }
+      }
+    });
+  });
+  return matchedIds;
+}
+
+function computeDerived(){
+  let runningAvg = 0, runningHalf = 0;
+  let cumulativeEarnedAvg = null;
+
+  return periods.map((p, i) => {
+    const takenAvg = p.mlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+e.debitDays,0);
+    const takenHalf = p.mlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+e.debitDays,0);
+    const enjoyedAvg = p.mlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+e.days,0);
+    const enjoyedHalf = p.mlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+e.days,0);
+
+    const priorAvg = (i===0) ? (p.creditAvgManual!==null ? p.creditAvgManual : 0) : runningAvg;
+    const priorHalf = (i===0) ? (p.creditHalfManual!==null ? p.creditHalfManual : 0) : runningHalf;
+
+    if(cumulativeEarnedAvg===null){
+      cumulativeEarnedAvg = priorAvg;
+    }
+
+    const effectiveEarnedAvg = Math.max(0, Math.min(Number(p.earnedAvg)||0, EL_CAP - cumulativeEarnedAvg));
+    cumulativeEarnedAvg += effectiveEarnedAvg;
+
+    const effectiveEarnedHalf = (priorHalf >= HPL_CAP) ? 0 : Math.max(0, Math.min(Number(p.earnedHalf)||0, HPL_CAP - priorHalf));
+
+    let creditAvg = Math.min(EL_CAP, priorAvg + effectiveEarnedAvg);
+    let creditHalf = Math.min(HPL_CAP, priorHalf + effectiveEarnedHalf);
+
+    const balanceAvg = Math.max(0, creditAvg - takenAvg);
+    const balanceHalf = Math.max(0, creditHalf - takenHalf);
+
+    runningAvg = balanceAvg;
+    runningHalf = balanceHalf;
+
+    return {...p, takenAvg, takenHalf, enjoyedAvg, enjoyedHalf, creditAvg, creditHalf, balanceAvg, balanceHalf,
+            effectiveEarnedAvg, effectiveEarnedHalf};
+  });
+}
+
+function mlNotes(entries, type){
+  const seen = new Set();
+  const list = entries.filter(e=>{
+    if(e.type!==type) return false;
+    if(seen.has(e.id)) return false;
+    seen.add(e.id);
+    return true;
+  });
+  if(list.length===0) return '-';
+  const verb = (type==='lwp_effect'||type==='lwp_noeffect') ? 'LWP enjoyed for' : 'ML enjoyed for';
+  return list.map(e=>{
+    let label = (e.from===e.to)
+      ? `${verb} ${fmt(e.from)} [${e.days} day]`
+      : `${verb} ${fmt(e.from)}, ${fmt(e.to)} [${e.days} days]`;
+    if(e.debitDays!==e.days && e.debitDays>0){
+      label += ` — ${e.debitDays} day${e.debitDays===1?'':'s'} debited from HPL a/c`;
+    }
+    return `${label} <button class="btn-del" style="padding:1px 5px;font-size:.6rem;margin-left:4px;" onclick="deleteMlEntry(${e.id})">remove</button>`;
+  }).join('<br>');
+}
+
+function buildTableRows(derived, forPrint){
+  return derived.map((p, i) => {
+    return `<tr>
+      <td>${forPrint?'':'<input type="date" value="'+p.from+'" onchange="updatePeriodField('+i+',\'from\',this.value)" style="width:100%;font-size:.65rem;">'}${forPrint?fmt(p.from):''}</td>
+      <td>${forPrint?fmt(p.to):'<input type="date" value="'+p.to+'" onchange="updatePeriodField('+i+',\'to\',this.value)" style="width:100%;font-size:.65rem;">'}</td>
+      <td>${forPrint?fmt(p.vacFrom):'<input type="date" value="'+(p.vacFrom||'')+'" onchange="updatePeriodField('+i+',\'vacFrom\',this.value)" style="width:100%;font-size:.65rem;">'}</td>
+      <td>${forPrint?fmt(p.vacTo):'<input type="date" value="'+(p.vacTo||'')+'" onchange="updatePeriodField('+i+',\'vacTo\',this.value)" style="width:100%;font-size:.65rem;">'}</td>
+      <td>${forPrint?(p.effectiveEarnedAvg||'-'):'<input type="number" step="1" value="'+p.effectiveEarnedAvg+'" onchange="updatePeriodField('+i+',\'earnedAvg\',Math.round(parseFloat(this.value))||0)" style="width:100%;font-size:.65rem;">'}</td>
+      <td>${forPrint?(p.effectiveEarnedHalf||'-'):'<input type="number" step="1" value="'+p.effectiveEarnedHalf+'" onchange="updatePeriodField('+i+',\'earnedHalf\',Math.round(parseFloat(this.value))||0)" style="width:100%;font-size:.65rem;">'}</td>
+      <td>${p.vacDetEarn||'-'}</td>
+      <td class="credit-cell">${i===0 && !forPrint ? '<input type="number" value="'+(p.creditAvgManual!=null?p.creditAvgManual:0)+'" onchange="updatePeriodField(0,\'creditAvgManual\',Math.round(parseFloat(this.value))||0)" style="width:100%;font-size:.65rem;">' : p.creditAvg}</td>
+      <td class="credit-cell">${i===0 && !forPrint ? '<input type="number" value="'+(p.creditHalfManual!=null?p.creditHalfManual:0)+'" onchange="updatePeriodField(0,\'creditHalfManual\',Math.round(parseFloat(this.value))||0)" style="width:100%;font-size:.65rem;">' : p.creditHalf}</td>
+      <td>${p.vacDetCredit||'-'}</td>
+      <td class="taken-cell">${p.takenAvg||0}</td>
+      <td class="taken-cell">${p.takenHalf||0}</td>
+      <td class="vacdet-cell">-</td>
+      <td>${p.enjoyedAvg||0}</td>
+      <td>${p.enjoyedHalf||0}</td>
+      <td>${p.maternityFull||'-'}</td>
+      <td>${p.maternityHalf||'-'}</td>
+      <td>${p.lwp||'-'}</td>
+      <td>${p.specialFull||'-'}</td>
+      <td>${p.specialHalf||'-'}</td>
+      <td class="balance-num">${p.balanceAvg}</td>
+      <td class="balance-num">${p.balanceHalf}</td>
+      <td>-</td>
+    </tr>`;
+  }).join('');
+}
+
+function buildTotalsRowHtml(){
+  const totalMlDays = masterMlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
+  const totalHplDays = masterMlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
+  return `<tr style="background:#dbeafe;font-weight:700;">
+      <td colspan="13" style="text-align:right;padding-right:8px;">TOTAL DAYS ENJOYED (ENTIRE SERVICE) &rarr;</td>
+      <td>${totalMlDays}</td>
+      <td>${totalHplDays}</td>
+      <td colspan="8">Total ML (Avg Pay) Enjoyed: ${totalMlDays} day${totalMlDays===1?'':'s'} &nbsp;|&nbsp; Total HPL (Half Pay) Enjoyed: ${totalHplDays} day${totalHplDays===1?'':'s'}</td>
+    </tr>`;
+}
+
+function renderAll(){
+  const derived = computeDerived();
+
+  const tableBodyEl = document.getElementById('tableBody');
+  if(!tableBodyEl) return;
+  tableBodyEl.innerHTML = buildTableRows(derived,false);
+  const totalsHtml = buildTotalsRowHtml();
+  document.getElementById('leaveTotalsFoot').innerHTML = totalsHtml;
+  document.getElementById('printTableHolder').innerHTML =
+    '<div class="table-wrap"><table>'+document.getElementById('mainTable').querySelector('thead').outerHTML+
+    '<tbody>'+buildTableRows(derived,true)+'</tbody><tfoot>'+totalsHtml+'</tfoot></table></div>';
+
+  const leaveTypeLabel = {avg:'ML (Full Avg Pay)', half:'HPL', lwp_effect:'LWP (with CAS effect)', lwp_noeffect:'LWP (no CAS effect)'};
+  const entriesListEl = document.getElementById('leaveEntriesList');
+  if(entriesListEl){
+    entriesListEl.innerHTML = masterMlEntries.length===0 ? '' : masterMlEntries.map(e=>
+      `<span style="display:inline-flex;align-items:center;gap:6px;background:#e2e8f0;border-radius:4px;padding:3px 8px;margin:2px;">
+         ${leaveTypeLabel[e.type]||e.type}: ${fmt(e.from)} to ${fmt(e.to)}
+         <button class="btn-del" onclick="deleteMlEntry(${e.id})">Delete</button>
+       </span>`).join('');
+  }
+
+  document.getElementById('rowManageList').innerHTML = periods.map((p,i)=>
+    `<span style="display:inline-flex;align-items:center;gap:6px;background:#e2e8f0;border-radius:4px;padding:3px 8px;margin:2px;">
+       Row ${i+1}: ${fmt(p.from)} to ${fmt(p.to)}
+       <button class="btn-del" onclick="deletePeriodRow(${i})">Delete</button>
+     </span>`).join('');
+
+  document.getElementById('transferList').innerHTML = transferEvents.length===0
+    ? '<span style="color:#64748b;">No transfer events added.</span>'
+    : transferEvents.map(t=>
+      `<span style="display:inline-flex;align-items:center;gap:6px;background:#e2e8f0;border-radius:4px;padding:3px 8px;margin:2px;">
+         New school joined: ${fmt(t.date)}
+         <button class="btn-del" onclick="deleteTransferEvent(${t.id})">Delete</button>
+       </span>`).join('');
+
+  document.getElementById('synopsisPanel').innerHTML = (periods.map((p,i)=>{
+    const avgList = mlNotes(p.mlEntries,'avg');
+    const halfList = mlNotes(p.mlEntries,'half');
+    const lwpEffList = mlNotes(p.mlEntries,'lwp_effect');
+    const lwpNoEffList = mlNotes(p.mlEntries,'lwp_noeffect');
+    if(avgList==='-' && halfList==='-' && lwpEffList==='-' && lwpNoEffList==='-') return '';
+    return `<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed #cbd5e1;">
+      <b>Row ${i+1}: ${fmt(p.from)} to ${fmt(p.to)}</b><br>
+      <span style="color:#334155;">Full Pay (Avg): </span>${avgList}<br>
+      <span style="color:#334155;">Half Pay (HPL): </span>${halfList}<br>
+      <span style="color:#334155;">LWP (with CAS effect): </span>${lwpEffList}<br>
+      <span style="color:#334155;">LWP (no CAS effect): </span>${lwpNoEffList}
+    </div>`;
+  }).join('') || '<span style="color:#64748b;">No leave entries recorded yet.</span>') +
+  (()=>{
+    const totalMlDays = masterMlEntries.filter(e=>e.type==='avg').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
+    const totalHplDays = masterMlEntries.filter(e=>e.type==='half').reduce((s,e)=>s+daysBetween(e.from,e.to),0);
+    return `<div style="margin-top:6px;padding-top:8px;border-top:2px solid #1e3a8a;font-weight:700;color:#1e3a8a;">
+      Grand Total — ML (Avg Pay) Days Enjoyed: ${totalMlDays} &nbsp;|&nbsp; HPL (Half Pay) Days Enjoyed: ${totalHplDays}
+    </div>`;
+  })();
+
+  document.getElementById('pName').innerText = document.getElementById('staffName').value;
+  document.getElementById('pDesig').innerText = document.getElementById('designation').value;
+  document.getElementById('pDoj').innerText = fmt(document.getElementById('doj').value);
+  document.getElementById('pDor').innerText = fmt(document.getElementById('leaveUpToDate').value);
+}
+
+function doPrint(){
+  window.print();
+}
+
+document.getElementById('leaveUpToDate') && document.getElementById('leaveUpToDate').addEventListener('input', function(){
+  this.dataset.userSet = '1';
+});
+
+window.addEventListener('DOMContentLoaded', function(){
+  try{
+    syncLeaveUpToDate();
+    renderAll();
+  }catch(e){
+    window.onerror(e.message, '', (e.lineNumber||''), '', e);
+  }
+});
+</script>
+
+<script>
+/* =========================================================================
+   SECTION 6 — CAS / MILESTONE (10 / 18 / 20 YEARS) BENEFIT DOCUMENT ENGINE
+   Additive module: reads window.CAS_ropa98Rows / CAS_ropa09Rows / CAS_ropa19Rows
+   (exposed by processFixationTimeline in the core engine above) and the
+   Staff & Service Details already entered in Section 1. Does not alter any
+   existing calculation, table, or print flow.
+   ========================================================================= */
+
+const CAS_EMBLEM_B64 = "data:image/png;base64,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";
+const CAS_GO_REF = {
+    '98': 'U/M No. 25-SE(B) dt. 12.02.1999, as per ROPA-1998',
+    '09': 'G.O. No. 46-SE(B) dated 27.02.2009 read with G.O. No. 1B1-SE(B) dated 10.02.2009 and para-I of G.O. 30-SE(B) dated 10.02.2010, as per ROPA-2009',
+    '19': 'G.O. No. 437-SE(P&B)/SL/5S-408/19, dated 13.12.2019, as per ROPA-2019'
+};
+const CAS_REGIME_NAME = { '98': 'ROPA-1998', '09': 'ROPA-2009', '19': 'ROPA-2019' };
+const CAS_MILESTONE_LABEL = { '10': '10 YEARS', '18': '18 YEARS', '20': '20 YEARS' };
+const CAS_MILESTONE_BN = { '10': '১০ বছর', '18': '১৮ বছর', '20': '২০ বছর' };
+
+/* ---------- Prior-school (multi-school career) rows ---------- */
+let casPriorSchoolSeq = 0;
+function casAddPriorSchool(name, doj, dol) {
+    casPriorSchoolSeq++;
+    const id = casPriorSchoolSeq;
+    const wrap = document.createElement('div');
+    wrap.className = 'grid-inputs';
+    wrap.id = 'casPS_row_' + id;
+    wrap.style.borderTop = '1px dashed #cbd5e1';
+    wrap.style.paddingTop = '8px';
+    wrap.style.marginTop = '8px';
+    wrap.innerHTML = `
+        <div class="form-group"><label>School #${id} — Name &amp; Address</label><input type="text" id="casPS_name_${id}" value="${name || ''}" placeholder="e.g. XYZ High School, P.O..., Dist. ..."></div>
+        <div class="form-group"><label>Date of Joining</label><input type="date" id="casPS_doj_${id}" value="${doj || ''}"></div>
+        <div class="form-group"><label>Date of Relieving / Leaving</label><input type="date" id="casPS_dol_${id}" value="${dol || ''}"></div>
+        <div class="form-group"><label>&nbsp;</label><button type="button" class="btn-add" style="background:#b91c1c;" onclick="document.getElementById('casPS_row_${id}').remove()">Remove</button></div>`;
+    document.getElementById('casPriorSchoolsList').appendChild(wrap);
+}
+
+function casGetPriorSchools() {
+    const list = [];
+    document.querySelectorAll('#casPriorSchoolsList [id^="casPS_row_"]').forEach(row => {
+        const idSuffix = row.id.replace('casPS_row_', '');
+        const name = document.getElementById('casPS_name_' + idSuffix).value.trim();
+        const dojVal = document.getElementById('casPS_doj_' + idSuffix).value;
+        const dolVal = document.getElementById('casPS_dol_' + idSuffix).value;
+        if (name) {
+            list.push({
+                name,
+                doj: dojVal ? new Date(dojVal + 'T00:00:00') : null,
+                dol: dolVal ? new Date(dolVal + 'T00:00:00') : null
+            });
+        }
+    });
+    return list;
+}
+
+function casToggleGovFields() {
+    const isMc = document.getElementById('casGovType').value === 'MC';
+    document.getElementById('casMcValidGroup').style.display = isMc ? '' : 'none';
+}
+
+function casBuildServiceNarrative(sriSmt, staffName, designation, doj, priorSchools, dojCurrentSchool, fullSchool, approvalNo, heShe) {
+    if (!priorSchools.length) {
+        return `${sriSmt} ${staffName} joined on ${casFmt(doj)} as an approved ${designation} of ${fullSchool} and has been serving continuously and satisfactorily since then.`;
+    }
+    const chainStr = priorSchools.map((s, i) => {
+        const from = casFmt(s.doj || (i === 0 ? doj : null));
+        const to = s.dol ? casFmt(s.dol) : 'till date';
+        return `${s.name} ${from} TO ${to}`;
+    }).join(' & ');
+    const firstJoinDate = casFmt(priorSchools[0].doj || doj);
+    return `${sriSmt} ${staffName} first joined on ${firstJoinDate} as an approved ${designation} at ${chainStr} now ${heShe} is acting as an approved ${designation} of ${fullSchool}${approvalNo ? ' [Approval No. ' + approvalNo + ']' : ''} since ${casFmt(dojCurrentSchool)}.`;
+}
+
+function casFmt(d){
+    if (!(d instanceof Date) || isNaN(d)) return '________________';
+    return formatDate(d);
+}
+
+function casTodayInput(id){
+    const v = document.getElementById(id).value;
+    return v ? new Date(v + 'T00:00:00') : null;
+}
+
+function casFindMilestone(rows, type) {
+    if (!rows || !rows.length) return null;
+    const wanted = CAS_MILESTONE_LABEL[type];
+    const idx = rows.findIndex(r => r.label && r.label.indexOf(wanted) !== -1);
+    if (idx === -1) return null;
+    return { row: rows[idx], prevRow: idx > 0 ? rows[idx - 1] : null, nextRow: idx < rows.length - 1 ? rows[idx + 1] : null, idx };
+}
+
+function casDetectRegime(type) {
+    const sets = [['98', window.CAS_ropa98Rows], ['09', window.CAS_ropa09Rows], ['19', window.CAS_ropa19Rows]];
+    for (const [regime, rows] of sets) {
+        const found = casFindMilestone(rows, type);
+        if (found) return { regime, ...found };
+    }
+    return null;
+}
+
+function casNormalizeCellLabel(value) {
+    if (!value) return '';
+    const cleaned = String(value).replace(/(?:CELL-)+/gi, '').trim();
+    return cleaned;
+}
+
+function casDescribeRow(row) {
+    if (!row) return { scaleLabel: '—', payLabel: '—', basicDisplay: '0', cellLabel: '' };
+    // Keep the numeric/display basic pay available to fixation calculations.
+    // Previously this function returned only payLabel, so the memorandum
+    // parser read the existing pay as 0 even though the pay-table showed it.
+    return {
+        scaleLabel: row.scaleStr || '—',
+        payLabel: 'Rs. ' + (row.basicDisplay || '—'),
+        basicDisplay: row.basicDisplay || '0',
+        cellLabel: casNormalizeCellLabel(row.trackCol)
+    };
+}
+
+function casCellNumber(row) {
+    const n = parseInt(casNormalizeCellLabel(row && row.trackCol), 10);
+    return Number.isFinite(n) ? n : null;
+}
+
+function casNextPayDetails(row, regime) {
+    if (!row) return { amount: 0, nextPay: 0, nextLabel: '' };
+    const basic = parseInt(String(row.basicDisplay || '0').replace(/,/g, ''), 10) || 0;
+    if (regime === '19') {
+        const levelMatch = String(row.scaleStr || '').match(/Level-(\d+)/i);
+        const level = levelMatch ? parseInt(levelMatch[1], 10) : null;
+        const cell = casCellNumber(row);
+        const arr = level ? matrixData19[level] : null;
+        if (arr && cell && cell < arr.length) {
+            const nextPay = arr[cell];
+            return { amount: Math.max(0, nextPay - basic), nextPay, nextLabel: `in LEVEL-${level}` };
+        }
+    }
+    if (regime === '09') {
+        const gp = parseInt(String(row.gpDisplay || '0').replace(/,/g, ''), 10) || 0;
+        const band = Math.max(0, basic - gp);
+        const inc = calculate09Increment(band, gp);
+        return { amount: inc, nextPay: basic + inc, nextLabel: row.scaleStr || '' };
+    }
+    if (regime === '98') {
+        const gpMatch = String(row.scaleStr || '').match(/GP\s*(\d+)/i);
+        const gp = gpMatch ? parseInt(gpMatch[1], 10) : null;
+        const arr = gp ? matrixData98[gp] : null;
+        if (arr) {
+            const idx = arr.indexOf(basic);
+            if (idx >= 0 && idx < arr.length - 1) {
+                const nextPay = arr[idx + 1];
+                return { amount: nextPay - basic, nextPay, nextLabel: row.scaleStr || '' };
+            }
+        }
+    }
+    return { amount: 0, nextPay: basic, nextLabel: row.scaleStr || '' };
+}
+
+function casInitDefaultStaffData() {
+    // Default working example requested for the dashboard. This is only the
+    // initial form state; an imported/saved JSON dataset can replace it.
+    const name = document.getElementById('staffName');
+    const dob = document.getElementById('dob');
+    const doj = document.getElementById('doj');
+    const qual = document.getElementById('casQualification');
+    const currentDoj = document.getElementById('casDojCurrentSchool');
+    const approval = document.getElementById('casApprovalNo');
+    const prev = document.getElementById('casPrevSchool');
+    if (name && !name.value) name.value = 'DIPTIMAN SAHA';
+    if (dob && !dob.value) dob.value = '1980-03-28';
+    if (doj && !doj.value) doj.value = '2008-09-24';
+    if (qual && !qual.value) qual.value = 'B.A.; B.P.ED.';
+    if (currentDoj && !currentDoj.value) currentDoj.value = '2022-06-29';
+    if (approval && !approval.value) approval.value = '1954/S; dated 04-07-2022';
+    if (prev && !prev.value) prev.value = 'Kharikasuli Madhabpur J H S, P.O.: Baital, P.S.- Joypur, Dist.: Bankura, PIN: 722138';
+
+    // Seed one prior-school service row so the first generated application
+    // automatically contains the previous-school service chain.
+    const list = document.getElementById('casPriorSchoolsList');
+    if (list && !list.querySelector('[id^="casPS_row_"]') && prev && prev.value) {
+        casAddPriorSchool(prev.value, '2008-09-24', '2022-06-28');
+    }
+}
+
+function casBuildPayStructureDoc(type, cutoffDate, staffName, designation, schoolName, schoolAddr, doj) {
+    const cutoff = cutoffDate instanceof Date && !isNaN(cutoffDate) ? cutoffDate : null;
+    const fmtMoney = v => {
+        const n = parseInt(String(v == null ? '' : v).replace(/,/g, ''), 10);
+        return Number.isFinite(n) ? n.toLocaleString('en-IN') : '';
+    };
+    const safeDate = d => (d instanceof Date && !isNaN(d)) ? formatDate(d) : '';
+    const scaleWithCell = (row, regimeLabel) => {
+        const scale = row.scaleStr || '';
+        const cell = casNormalizeCellLabel(row.trackCol);
+        const gp = parseInt(String(row.gpDisplay || '').replace(/,/g, ''), 10);
+        if (regimeLabel === 'ROPA-2019') {
+            const levelMatch = scale.match(/Level-(\d+)/i);
+            const level = levelMatch ? levelMatch[1] : '';
+            const pb = Number.isFinite(gp) && pbMap09[gp] ? pbMap09[gp].replace(':','-') : '';
+            return `LEVEL-${level}${pb ? '-' + pb + '-GP-RS-' + gp : ''}`;
+        }
+        if (regimeLabel === 'ROPA-2009') {
+            return scale.replace(/:([0-9])/,'-$1').replace(/-GP-(\d+)/, '-GP-RS-$1');
+        }
+        return scale;
+    };
+    const rows98 = (window.CAS_ropa98Rows || []).filter(r => r && r.date instanceof Date && r.date >= doj && (!cutoff || r.date <= cutoff));
+    const rows09 = (window.CAS_ropa09Rows || []).filter(r => r && r.date instanceof Date && r.date >= doj && (!cutoff || r.date <= cutoff));
+    const rows19 = (window.CAS_ropa19Rows || []).filter(r => r && r.date instanceof Date && r.date >= doj && (!cutoff || r.date <= cutoff));
+
+    const htmlRows = [];
+    const pushRows = (rows, regimeLabel) => rows.forEach(r => {
+        // Omit leave dates: the Pay Structure "Remarks" column should not show
+        // the ML/HPL/LWP/"NO LEAVE" leave-account annotation that other tables
+        // append to row.label — strip that trailing note before display.
+        let remarks = (r.label || '').replace(/<br>\s*<span style="font-weight:400;font-size:\.78em;color:#334155;">.*?<\/span>\s*$/, '');
+        const upper = remarks.toUpperCase();
+        if (upper.includes('10 YEARS')) remarks = '<strong>10 YEARS</strong>';
+        else if (upper.includes('18 YEARS')) remarks = '<strong>18 YEARS</strong>';
+        else if (upper.includes('20 YEARS')) remarks = '<strong>20 YEARS</strong>';
+        else if (upper.includes('DOA')) remarks = '<strong>DOA / PAY REVISION</strong>';
+        else if (upper.includes('PAY REVISION')) remarks = '<strong>PAY REVISION</strong>';
+        htmlRows.push({
+            doa: safeDate(r.date),
+            scale: scaleWithCell(r, regimeLabel),
+            pb: regimeLabel === 'ROPA-2009' ? (r.trackCol || '') : (regimeLabel === 'ROPA-1998' ? '-' : (casNormalizeCellLabel(r.trackCol) ? 'CELL-' + casNormalizeCellLabel(r.trackCol) : '')),
+            gp: regimeLabel === 'ROPA-2009' ? (r.gpDisplay || '') : '-',
+            bp: fmtMoney(r.basicDisplay),
+            remarks,
+            dot: safeDate(r.dot),
+            regime: regimeLabel
+        });
+    });
+
+    // Keep the service-book structure grouped in the same order as the source
+    // pay regimes: ROPA-1998, ROPA-2009, then ROPA-2019.
+    pushRows(rows98, 'ROPA-1998');
+    pushRows(rows09, 'ROPA-2009');
+    pushRows(rows19, 'ROPA-2019');
+
+    const title = `PAY STRUCTURE OF ${staffName} ; ${designation.toUpperCase()} FROM THE 1ST DATE OF APPOINTMENT IN SERVICE i.e. ${safeDate(doj)}`;
+    const schoolLine = `${schoolName}${schoolAddr ? ' ; ' + schoolAddr : ''}`;
+    const cutoffText = cutoff ? `UPTO ${safeDate(cutoff)}` : 'UPTO DATE';
+    const bodyRows = htmlRows.length ? htmlRows.map(r => `
+        <tr>
+          <td>${r.doa}</td><td>${r.scale}</td><td>${r.pb}</td><td>${r.gp}</td>
+          <td>${r.bp}</td><td>${r.remarks}<br><span style="font-size:.78em;font-weight:400;">${r.regime}</span></td><td>${r.dot}</td>
+        </tr>`).join('') : `<tr><td colspan="7" style="text-align:center;">No generated pay rows available.</td></tr>`;
+
+    return `
+      <div class="cas-pay-structure">
+        <div class="ps-title">${title}</div>
+        <div class="ps-school">${schoolLine}</div>
+        <div class="ps-cutoff">PAY STRUCTURE ${cutoffText}</div>
+        <table class="ps-table">
+          <thead><tr><th>DOA</th><th>Scale / Pay Band</th><th>PB</th><th>GP</th><th>BP</th><th>Remarks</th><th>DOT</th></tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>`;
+}
+
+function generateCasDocuments(type) {
+    const statusEl = document.getElementById('casDocStatus');
+    const previewEl = document.getElementById('casDocPreview');
+    statusEl.style.color = '#b91c1c';
+    previewEl.innerHTML = '';
+
+    if (!window.CAS_dataReady) {
+        // Document generation is self-contained: generate the pay tables first
+        // so the selected 10Y/18Y/20Y pay structure is available automatically.
+        processFixationTimeline();
+    }
+    if (!window.CAS_dataReady) {
+        statusEl.textContent = 'Please check the pay-table inputs; the calculation could not be generated.';
+        return;
+    }
+
+    const doj = casTodayInput('doj') || new Date(document.getElementById('doj').value + 'T00:00:00');
+    if (!doj || isNaN(doj)) { statusEl.textContent = 'Please enter Date of Joining in Section 1.'; return; }
+
+    const detected = casDetectRegime(type);
+    if (!detected) {
+        statusEl.textContent = `No ${CAS_MILESTONE_LABEL[type]} milestone was found for this staff member within the generated tables — either not yet reached, falls outside the option/DOR window, or the staff member's Grade Pay is excluded from the scale-change benefit under current rules. (Note: 10-Year and 20-Year milestones normally grant only an additional increment, not a scale change — this is normal.)`;
+        return;
+    }
+
+    const { regime, row: msRow, prevRow, nextRow } = detected;
+    const effectDate = new Date(msRow.date);
+    // IMPORTANT: service-completion date and CAS effective date are different.
+    // The actual service-completion date is one day before the ORIGINAL
+    // milestone/anniversary date.  For Window-A (02-Jan to 30-Jun), the
+    // effective date may shift to 01-Jul, but the completion date MUST NOT
+    // shift to 30-Jun. Example: DOJ 24-01-2008 -> 18 years completed on
+    // 23-01-2026; CAS effective date -> 01-07-2026.
+    // ALWAYS derive the actual service anniversary from the entered FIRST DOJ.
+    // Never derive service completion from the shifted 01-July effective date.
+    // Example: DOJ 24-01-2008 + 18 years = 24-01-2026; service is completed
+    // on 23-01-2026.  If the anniversary is in the 02-Jan to 30-Jun window,
+    // the CAS effective date may move to 01-07-2026, but completion stays 23-01-2026.
+    const milestoneYears = parseInt(type, 10) || 0;
+    const actualMilestoneDate = new Date(doj.getFullYear() + milestoneYears, doj.getMonth(), doj.getDate());
+    const completionDate = new Date(actualMilestoneDate);
+    completionDate.setDate(completionDate.getDate() - 1);
+    const isWindowA = actualMilestoneDate.getMonth() >= 0 && actualMilestoneDate.getMonth() <= 5 &&
+        !(actualMilestoneDate.getMonth() === 0 && actualMilestoneDate.getDate() === 1);
+    const nextIncrementDate = (isWindowA && effectDate.getMonth() === 6 && effectDate.getDate() === 1)
+        ? new Date(effectDate)
+        : (nextRow ? new Date(nextRow.date) : new Date(effectDate.getFullYear() + 1, 6, 1));
+
+    // The existing pay for fixation is the pay actually drawn on the day
+    // immediately BEFORE the CAS effective date.  Do not use the 01-July
+    // annual-increment row when CAS also takes effect on 01-July.
+    const regimeRows = (window.CAS_ropa98Rows && regime === '98') ? window.CAS_ropa98Rows
+        : (window.CAS_ropa09Rows && regime === '09') ? window.CAS_ropa09Rows
+        : (window.CAS_ropa19Rows && regime === '19') ? window.CAS_ropa19Rows : [];
+    const completionTime = completionDate.getTime();
+    let existingRow = null;
+    for (const r of regimeRows) {
+        if (!r || !(r.date instanceof Date)) continue;
+        if (r.date.getTime() <= completionTime) existingRow = r;
+    }
+    // If the generated timeline has no row on/before 30-June, use the last
+    // row strictly before the effect date, then the detected previous row.
+    if (!existingRow) {
+        for (const r of regimeRows) {
+            if (r && r.date instanceof Date && r.date < effectDate) existingRow = r;
+        }
+    }
+    existingRow = existingRow || prevRow;
+    const existing = casDescribeRow(existingRow);
+    const fixed = casDescribeRow(msRow);
+
+    // If a normal annual increment is also due on the CAS effect date, it is
+    // applied FIRST.  The additional 18-Year increment is then calculated
+    // from that post-normal-increment pay.  The final CAS scale fitment remains
+    // the value in msRow.
+    const sameDateNormalRow = regimeRows.find(r => r && r.date instanceof Date &&
+        r.date.getTime() === effectDate.getTime() && String(r.label || '').toUpperCase().includes('INCREMENT') &&
+        !String(r.label || '').toUpperCase().includes('10 YEARS') &&
+        !String(r.label || '').toUpperCase().includes('18 YEARS') &&
+        !String(r.label || '').toUpperCase().includes('20 YEARS')) || null;
+    const normalIncrementRow = sameDateNormalRow || null;
+    const memoEffectDate = (type === '18' && regime === '19' && normalIncrementRow)
+        ? new Date(normalIncrementRow.date) : effectDate;
+    const memoDni = (type === '18' && regime === '19') ? new Date(memoEffectDate.getFullYear() + 1, 6, 1) : nextIncrementDate;
+    const existingNumForFixation = parseInt(String(existing.basicDisplay || '0').replace(/,/g, ''), 10) || 0;
+    const normalNumForFixation = normalIncrementRow ? parseInt(String(normalIncrementRow.basicDisplay || '0').replace(/,/g, ''), 10) || 0 : existingNumForFixation;
+    const normalIncrementAmount = Math.max(0, normalNumForFixation - existingNumForFixation);
+    const additionalIncrementBaseRow = normalIncrementRow || existingRow;
+
+    const sex = document.getElementById('casSex').value;
+    const sriSmt = sex === 'M' ? 'Sri' : 'Smt.';
+    const heShe = sex === 'M' ? 'he' : 'she';
+    const heSheCap = sex === 'M' ? 'He' : 'She';
+    const hisHer = sex === 'M' ? 'his' : 'her';
+    const himHer = sex === 'M' ? 'him' : 'her';
+
+    const staffName = document.getElementById('staffName').value || '________________';
+    const designation = document.getElementById('designation').value || '________________';
+    const schoolName = document.getElementById('schoolName').value || '________________';
+    const schoolAddr = document.getElementById('casSchoolAddress').value || '';
+    const fullSchool = schoolName + (schoolAddr ? '; ' + schoolAddr : '');
+    const qualification = document.getElementById('casQualification').value || '';
+    const district = document.getElementById('casDistrict').value || '';
+    const diOffice = document.getElementById('casDiOffice').value || 'The District Inspector of Schools (S.E.),';
+    const resolutionNo = document.getElementById('casResolutionNo').value || '________________';
+    const approvalNo = document.getElementById('casApprovalNo').value || '________________';
+    const prevSchool = document.getElementById('casPrevSchool').value || '';
+    const dojCurrentSchoolVal = document.getElementById('casDojCurrentSchool').value;
+    const priorSchoolsForDefault = casGetPriorSchools();
+    const lastPriorDol = priorSchoolsForDefault.length ? priorSchoolsForDefault[priorSchoolsForDefault.length - 1].dol : null;
+    const defaultCurrentDoj = lastPriorDol ? addDays(lastPriorDol, 1) : doj;
+    const dojCurrentSchool = dojCurrentSchoolVal ? new Date(dojCurrentSchoolVal + 'T00:00:00') : defaultCurrentDoj;
+    const optionDateVal = document.getElementById('casOptionDate').value;
+    const optionDate = optionDateVal ? new Date(optionDateVal + 'T00:00:00') : new Date();
+    const govType = document.getElementById('casGovType').value;
+    const hoiStatus = document.getElementById('casHoiStatus').value || 'Headmaster';
+    // Applicant's application is always addressed to the Administrator through the selected HOI.
+    // The applicant remains the first-person author throughout the letter.
+    const authorityRecipient = 'The Administrator,';
+    const authorityShort = 'The Administrator';
+    const approvalAuthority = govType === 'Administrator' ? 'The Administrator' : 'The Secretary / President, Managing Committee';
+    const mcValidUptoVal = document.getElementById('casMcValidUpto').value;
+    const mcValidUpto = mcValidUptoVal ? casFmt(new Date(mcValidUptoVal + 'T00:00:00')) : '________________';
+    const subDivision = document.getElementById('casSubDivision').value || '';
+    const contactNo = document.getElementById('casContactNo').value || '';
+    const email = document.getElementById('casEmail').value || '';
+    const priorSchools = casGetPriorSchools();
+
+    const milestoneWord = CAS_MILESTONE_LABEL[type];
+    const milestoneWordBn = CAS_MILESTONE_BN[type];
+    const regimeName = CAS_REGIME_NAME[regime];
+    const goRef = CAS_GO_REF[regime];
+
+    const serviceNarrative = casBuildServiceNarrative(sriSmt, staffName, designation, doj, priorSchools, dojCurrentSchool, fullSchool, approvalNo, heShe);
+    const applicantOpening = priorSchools.length
+        ? `I, ${sriSmt} ${staffName}, ${designation}, state that I first joined service on ${casFmt(priorSchools[0].doj || doj)} and served at ${priorSchools.map((s, i) => `${s.name} from ${casFmt(s.doj || (i === 0 ? doj : null))} to ${s.dol ? casFmt(s.dol) : 'till date'}`).join('; ')}. I am now serving as an approved ${designation} of ${fullSchool} since ${casFmt(dojCurrentSchool)}${approvalNo ? ` [Approval No. ${approvalNo}]` : ''}.`
+        : `I, ${sriSmt} ${staffName}, ${designation}, state that I joined service on ${casFmt(doj)} as an approved ${designation} of ${fullSchool} and have been serving continuously and satisfactorily since then.`;
+
+    const nextPayDetails = casNextPayDetails(additionalIncrementBaseRow, regime);
+
+    /* ---------- DOC 1: PART A — OPTION & DECLARATION ---------- */
+    const doc1 = `
+        <p style="text-align:center;font-weight:bold;font-size:1.02rem;margin-bottom:2px;">PROFORMA FOR OPTION &amp; FIXATION OF PAY FOR CAS FOR ${milestoneWord} UNDER ${regimeName}</p>
+        <p style="text-align:center;font-size:.85rem;margin-top:0;">(For availing the benefit in terms of ${goRef})</p>
+        <p style="font-weight:bold;margin-top:18px;">PART - A : OPTION (to be filled in by the incumbent)</p>
+        <p>I do hereby opt to avail the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service under ${regimeName}, with effect from ${casFmt(effectDate)}, i.e. w.e.f. ${isWindowA ? 'my date of next increment' : 'my date of entitlement'}.</p>
+        <p><strong>Declaration.</strong> I hereby undertake to refund to the Government any amount which may be drawn by me in excess of what is admissible to me on account of erroneous fixation of pay in the revised pay structure, as soon as the fact of such excess drawal comes / is brought to my notice.</p>
+        <table style="width:100%;margin-top:24px;"><tr>
+            <td style="width:50%;">Date: ${casFmt(optionDate)}<br>Station: ${schoolName}</td>
+            <td style="width:50%;text-align:right;">Signature of staff ____________________________<br>Name: ${staffName}<br>Designation: ${designation}</td>
+        </tr></table>`;
+
+    /* ---------- DOC 2: PART B — FIXATION (BY HOI) ---------- */
+    const partBRows = [
+        ['1', 'Name of the Employee', staffName],
+        ['2', 'Name of the School', fullSchool],
+        ['3', 'Designation', designation],
+        ['4', 'Date of Joining into Service', casFmt(doj)],
+        ['5', `Date of Completion of ${milestoneWord} Service [after taking LWP, if any, into account]`, casFmt(completionDate)],
+        ['6', 'Date of Option for availing this benefit', casFmt(optionDate)],
+        ['7', 'Existing Pay Level / Scale', existing.scaleLabel],
+        ['8', 'Existing Basic Pay' + (existing.cellLabel ? ' &amp; Cell' : ''), existing.payLabel + (existing.cellLabel ? ' [Cell-' + existing.cellLabel + ']' : '')],
+        ['9', 'Basic Pay Fixed at', fixed.payLabel + (fixed.cellLabel ? ' [Cell-' + fixed.cellLabel + ']' : '') + '<br><span style="font-size:.85rem;">In the pay Level/Scale: ' + fixed.scaleLabel + '</span>'],
+        ['10', 'Date of Effect', casFmt(effectDate)],
+        ['11', 'Date of Next Increment', casFmt(memoDni)]
+    ];
+    const doc2 = `
+        <p style="text-align:center;font-weight:bold;">PART - B : FIXATION (to be filled in by the HOI)</p>
+        <table style="width:100%;border-collapse:collapse;margin-top:10px;">
+            ${partBRows.map(r => `<tr><td style="width:5%;padding:4px;border-bottom:1px solid #ccc;">${r[0]}</td><td style="width:45%;padding:4px;border-bottom:1px solid #ccc;">${r[1]}</td><td style="width:2%;padding:4px;border-bottom:1px solid #ccc;">:</td><td style="padding:4px;border-bottom:1px solid #ccc;font-weight:600;">${r[2]}</td></tr>`).join('')}
+        </table>
+        <table style="width:100%;margin-top:30px;"><tr>
+            <td style="width:50%;">Date: ________________</td>
+            <td style="width:50%;text-align:right;">Signature of the ${hoiStatus}</td>
+        </tr></table>
+        <p style="margin-top:20px;">Approved by ${approvalAuthority} vide ${govType === 'MC' ? 'Resolution' : 'Order'} No. ${resolutionNo}.</p>
+        <p style="text-align:right;margin-top:30px;">${govType === 'MC' ? 'Secretary / President, Managing Committee' : 'The Administrator'}</p>`;
+
+    /* ---------- DOC 3: APPLICANT DECLARATION / APPLICATION / OPTION LETTER ---------- */
+    const doc3 = `
+        <p>To<br>${authorityRecipient}<br>Through the ${hoiStatus},<br>${schoolName}<br>${schoolAddr}</p>
+        <p style="margin-top:16px;"><strong>Subject:</strong> Declaration cum Application cum Option for availing the benefit of Career Advancement Scheme for completion of ${milestoneWord} continuous service under ${regimeName}.</p>
+        <p style="text-align:justify;"><strong>I, ${sriSmt} ${staffName}, ${designation},</strong> hereby state that I have joined service on ${casFmt(doj)} and have completed a full ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}. ${priorSchools.length ? `My service history, including my previous school service, is as follows: ${priorSchools.map((s, i) => `${s.name} (${casFmt(s.doj || (i === 0 ? doj : null))} to ${s.dol ? casFmt(s.dol) : 'till date'})`).join('; ')}. I am presently serving at ${fullSchool} since ${casFmt(dojCurrentSchool)}.` : `I am serving continuously and satisfactorily at ${fullSchool}.`}</p>
+        <p style="text-align:justify;">Hence, in terms of ${regimeName}, vide ${goRef}, I do hereby opt to avail the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service with effect from ${casFmt(effectDate)}, i.e. w.e.f. ${isWindowA ? 'my date of next increment' : 'my date of entitlement'}.</p>
+        <p style="text-align:justify;">I therefore request ${authorityShort} to kindly take necessary arrangements to accord approval from the end of the ${diOffice} ${district} in my favour for availing the ${milestoneWord.toLowerCase()} pay-fixation benefit w.e.f. ${casFmt(effectDate)} as per ${regimeName} rules.</p>
+        <p style="text-align:justify;">I further state that my present Basic Pay is ${existing.payLabel} in the pay scale/level ${existing.scaleLabel}.</p>
+        <p style="text-align:justify;">I hereby undertake to refund to the Government any amount which may be drawn by me in excess of what is admissible to me on account of erroneous fixation of pay in the revised pay structure, as soon as the fact of such excess drawal comes / is brought to my notice.</p>
+        <table style="width:100%;margin-top:24px;"><tr>
+            <td style="width:50%;">With thanks,<br>Date: ________________<br>Station: ${schoolName}</td>
+            <td style="width:50%;text-align:right;">Yours faithfully,<br><br>Signature of ${sriSmt} ${staffName} ____________________________<br>${sriSmt} ${staffName}<br>${designation}</td>
+        </tr></table>
+        <p style="margin-top:16px;"><strong>Enclosures:</strong><br>1. 1st Approval of Appointment (copy)<br>2. Other related documents.</p>
+        <table style="width:100%;margin-top:24px;"><tr>
+            <td style="width:50%;">Received / recommended by ${hoiStatus}<br><br>________________________<br>${hoiStatus}</td>
+            <td style="width:50%;text-align:right;">${govType === 'Administrator' ? 'Approved &amp; Passed' : 'Received / Placed before Managing Committee'}<br><br>________________________<br>${authorityShort}</td>
+        </tr></table>`;
+
+    /* ---------- DOC 4: HOI REPORT ---------- */
+    const doc4 = `
+        <p style="font-weight:bold;">HOI Report — ${hoiStatus}</p>
+        <p>Proposal No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <p style="text-align:justify;">${staffName}, ${designation} of this school, has duly submitted an application for allowing in ${hisHer} favour the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous service under ${regimeName}.</p>
+        <p style="text-align:justify;">${hisHer[0].toUpperCase()+hisHer.slice(1)} application, along with all other necessary documents, is being placed for taking necessary steps in this regard.</p>
+        <p style="text-align:right;margin-top:40px;">________________________<br>${hoiStatus}</p>`;
+
+    /* ---------- DOC 5: GOVERNANCE ORDER / MANAGING COMMITTEE RESOLUTION ---------- */
+    const doc5 = govType === 'MC' ? `
+        <p style="font-weight:bold;text-align:center;">Managing Committee Resolution</p>
+        <p>Resolution No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <p style="text-align:justify;">As per the ${hoiStatus} report in connection with the application submitted by ${staffName}, ${designation} of this school, for allowing in ${hisHer} favour the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, and after verification of the relevant school records, it is seen that ${serviceNarrative.charAt(0).toLowerCase() + serviceNarrative.slice(1)} It is also seen that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
+        <p style="text-align:justify;">Hence, in terms of ${goRef}, the Managing Committee hereby approves and passes the proposal for allowing ${himHer} the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service with effect from ${casFmt(effectDate)}. The following pay details are approved and passed:</p>
+        <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+            <tr><td style="padding:4px;">Existing Pay</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${existing.payLabel}${existing.cellLabel ? ' [Cell-'+existing.cellLabel+']' : ''}; ${existing.scaleLabel}</td></tr>
+            <tr><td style="padding:4px;">Pay to be Fixed at</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${fixed.payLabel}${fixed.cellLabel ? ' [Cell-'+fixed.cellLabel+']' : ''}; ${fixed.scaleLabel}</td></tr>
+            <tr><td style="padding:4px;">Date of Effect</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(effectDate)}</td></tr>
+            <tr><td style="padding:4px;">Date of Next Increment</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(memoDni)}</td></tr>
+        </table>
+        <p style="margin-top:12px;">The ${hoiStatus} of this school is requested to take necessary steps in this regard.</p>
+        <p style="text-align:right;margin-top:40px;">________________________<br>Secretary / President, Managing Committee</p>` : `
+        <p style="font-weight:bold;">Administrator Order</p>
+        <p>Order No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <p style="text-align:justify;">As per the ${hoiStatus} report in connection with the application submitted by ${staffName}, ${designation} of this school, for allowing in ${hisHer} favour the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, and thereafter verifying related school documents, it is seen that ${serviceNarrative.charAt(0).toLowerCase() + serviceNarrative.slice(1)} It is also seen that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
+        <p style="text-align:justify;">Hence, in terms of ${goRef}, it is hereby approved and passed for allowing ${himHer} the benefit of Career Advancement Scheme for completion of ${milestoneWord} of continuous and satisfactory service under ${regimeName}, with effect from ${casFmt(effectDate)}, i.e. w.e.f. ${isWindowA ? hisHer + ' date of next increment' : hisHer + ' date of entitlement'}. ${hisHer[0].toUpperCase()+hisHer.slice(1)} following proposed pay details are also approved and passed:</p>
+        <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+            <tr><td style="padding:4px;">Existing Pay</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${existing.payLabel}${existing.cellLabel ? ' [Cell-'+existing.cellLabel+']' : ''}; ${existing.scaleLabel}</td></tr>
+            <tr><td style="padding:4px;">Pay to be Fixed at</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${fixed.payLabel}${fixed.cellLabel ? ' [Cell-'+fixed.cellLabel+']' : ''}; ${fixed.scaleLabel}</td></tr>
+            <tr><td style="padding:4px;">Date of Effect</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(effectDate)}</td></tr>
+            <tr><td style="padding:4px;">Date of Next Increment</td><td style="padding:4px;">:</td><td style="padding:4px;font-weight:600;">${casFmt(memoDni)}</td></tr>
+        </table>
+        <p style="margin-top:12px;">The ${hoiStatus} of this school is requested to take necessary steps in this regard.</p>
+        <p style="text-align:right;margin-top:40px;">________________________<br>The Administrator</p>`;
+
+    /* ---------- DOC 6: FORWARDING LETTER TO DI ---------- */
+    const doc6 = `
+        <p>To<br>${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
+        <p style="margin-top:16px;"><strong>Subject:</strong> Approval for ${milestoneWord} fixation benefit in favour of ${staffName}, ${designation} of ${schoolName}.</p>
+        <p>Sir,</p>
+        <p style="text-align:justify;">I would like to submit the necessary documents for approval of the ${milestoneWord.toLowerCase()} benefit w.e.f. ${casFmt(effectDate)} in favour of ${staffName}, ${designation} of ${schoolName}, in terms of ${regimeName}, vide ${goRef}.</p>
+        <p style="text-align:justify;">${serviceNarrative} It is also seen that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
+        <p style="text-align:justify;">I, therefore, as empowered by Resolution / Order No. ${resolutionNo}, request you to kindly accord approval in favour of ${staffName} regarding ${hisHer} prayer for availing the ${milestoneWord.toLowerCase()} pay-fixation benefit w.e.f. ${casFmt(effectDate)} as per ${regimeName} rules.</p>
+        <table style="width:100%;margin-top:24px;"><tr>
+            <td style="width:50%;">With thanks,</td>
+            <td style="width:50%;text-align:right;">Yours faithfully,<br><br>________________________<br>${hoiStatus}</td>
+        </tr></table>
+        <p style="margin-top:16px;"><strong>Enclosures (with Check List):</strong></p>
+        <ol style="font-size:.88rem;line-height:1.5;">
+            <li>Forwarding letter of the HOI</li>
+            <li>Incumbent's application (Part-A)</li>
+            <li>Photocopy of M.C. Resolution / Administrator's Order</li>
+            <li>Photocopies of all approvals, including 1st approval</li>
+            <li>Triplicate copies of the ${milestoneWord.toLowerCase()} fixation proforma (Part-B)</li>
+            <li>Pay structure from 1st joining to date</li>
+            <li>Attested photocopy of updated Service Book with updated leave account and B.Ed details (if applicable)</li>
+            <li>Photocopy of prior option/fixation orders (ROPA-2009 &amp; 2019, as applicable)</li>
+            <li>Photocopy of educational qualification certificates/mark-sheets</li>
+            <li>Photocopy of current month's pay slip</li>
+            <li>No Litigation Certificate</li>
+            <li>M.C. Validity Certificate</li>
+            <li>Joining Report (all service)</li>
+            <li>Appointment letter / transfer order (all service)</li>
+            <li>S.S.C. recommendation (all service)</li>
+            <li>Date of Next Increment</li>
+            <li>Certificate of reason for delay (if applicable)</li>
+        </ol>`;
+
+    /* ---------- DOC 7: FINAL ACCEPTANCE REQUEST TO DI ---------- */
+    const doc7 = `
+        <p>To<br>${diOffice} ${district}.<br>Post &amp; District: ${district}.</p>
+        <p style="margin-top:16px;"><strong>Subject:</strong> Request for acceptance, approval and finalization of ${milestoneWord.toLowerCase()} fixation benefit in favour of ${staffName}, ${designation}, w.e.f. ${casFmt(effectDate)}.</p>
+        <p>Sir,</p>
+        <p style="text-align:justify;">I would like to inform you that the fixation of the ${milestoneWord.toLowerCase()} benefit w.e.f. ${casFmt(effectDate)} in favour of ${staffName}, ${designation}, has been duly approved from your end vide Memo No. ________________/S dated ________________, in terms of ${regimeName} (vide ${goRef}), and has been forwarded in IOSMS to your end for your kind acceptance.</p>
+        <p style="text-align:justify;">I therefore request you to kindly accept, approve, and finalize the same.</p>
+        <table style="width:100%;margin-top:24px;"><tr>
+            <td style="width:50%;">With thanks,</td>
+            <td style="width:50%;text-align:right;">Yours faithfully,<br><br>________________________<br>${hoiStatus}</td>
+        </tr></table>
+        <p style="margin-top:16px;"><strong>Enclosures:</strong><br>1. Approval of ${milestoneWord} Fixation of ${staffName}</p>`;
+
+    /* ---------- DOC 8: DISTRICT INSPECTOR'S OFFICE MEMORANDUM (final order, matches DI letterhead format) ---------- */
+    // The memorandum's 'existing Basic Pay as on completion date' must be
+    // the pre-effect-date snapshot (e.g. 30-06-2026), not the normal
+    // increment row dated 01-07-2026.
+    // DI Memorandum fixation date:
+    // For the 18-year ROPA-2019 benefit, the memorandum is to show the
+    // 01-07-YYYY fixation cycle: existing pay as on 30-06-YYYY, normal
+    // increment on 01-07-YYYY, then the additional 18-year increment and
+    // final Level-12 fitment.  The final fitment value itself remains the
+    // detected 18-year milestone value.
+    // The DI memorandum has TWO dates with different meanings:
+    // (1) actual service completion date = completionDate;
+    // (2) existing-pay snapshot = the day immediately before the fixation
+    // date (normally 30-06-YYYY when fixation is 01-07-YYYY).
+    const memoExistingPayDate = new Date(memoEffectDate);
+    memoExistingPayDate.setDate(memoExistingPayDate.getDate() - 1);
+
+    let memoExistingRow = existingRow;
+    if (type === '18' && regime === '19') {
+        memoExistingRow = null;
+        for (const r of regimeRows) {
+            if (r && r.date instanceof Date && r.date.getTime() <= memoExistingPayDate.getTime()) {
+                memoExistingRow = r;
+            }
+        }
+        memoExistingRow = memoExistingRow || existingRow;
+    }
+    const memoExisting = casDescribeRow(memoExistingRow);
+    const existingNum = parseInt(String(memoExisting.basicDisplay || '0').replace(/,/g, ''), 10) || 0;
+    const fixedNum = parseInt((msRow.basicDisplay || '0').replace(/,/g, ''), 10);
+    const normalPayNum = normalIncrementRow
+        ? parseInt(String(normalIncrementRow.basicDisplay || '0').replace(/,/g, ''), 10) || 0
+        : existingNum;
+    const normalIncrementAmountForMemo = Math.max(0, normalPayNum - existingNum);
+    const normalNextPayLabel = normalIncrementRow
+        ? String(normalIncrementRow.scaleStr || '').replace(/Level-/i, 'LEVEL-')
+        : (memoExisting.scaleLabel || '');
+    const govOrderWord = govType === 'MC' ? 'Resolution' : 'Administrator Order';
+
+    const doc8 = `
+        <div class="cas-di-office-memo">
+        <div style="text-align:center;">
+            <img src="${CAS_EMBLEM_B64}" alt="State Emblem of India" style="height:50px;margin-bottom:2px;">
+            <div class="di-title" style="font-weight:bold;font-size:1.05rem;">Govt of West Bengal</div>
+            <div class="di-office" style="font-weight:bold;">Office of the District Inspector of School (S.E.)</div>
+            <div style="font-weight:bold;">${district}</div>
+            <div style="border-bottom:1px solid #000;margin:4px auto 0;width:96%;"></div>
+            <div class="di-memo" style="text-decoration:underline;font-weight:bold;margin-top:6px;">OFFICE MEMORANDUM</div>
+        </div>
+        <p style="text-align:justify;margin-top:12px;">${serviceNarrative} As per resolution adopted in the ${govType === 'MC' ? 'Managing Committee' : 'Administrator'} of the said school vide ${govOrderWord} No. ${resolutionNo}, it reveals that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
+        <p style="text-align:justify;">In terms of ${regimeName}, vide ${goRef}, ${sriSmt} ${staffName}, ${designation} of the said school, is hereby allowed to draw the raised pay in ${fixed.scaleLabel}${fixed.cellLabel ? ' [' + fixed.cellLabel + ']' : ''} w.e.f. ${casFmt(memoEffectDate)} as per ${hisHer} option, for completion of ${milestoneWord.toLowerCase()} continuous and satisfactory service. ${hisHer[0].toUpperCase() + hisHer.slice(1)} pay is hereby fixed in the following manner.</p>
+        <p style="margin:10px 0 2px;">1. ${hisHer[0].toUpperCase() + hisHer.slice(1)} existing Basic Pay as on ${casFmt(memoExistingPayDate)} in the ${memoExisting.scaleLabel}${memoExisting.cellLabel ? ' in CELL-' + memoExisting.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${existingNum.toLocaleString('en-IN')}</strong></p>
+        <p style="margin:10px 0 2px;">2.a) Allowed Normal Increment [if required] &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${normalIncrementAmountForMemo.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${normalPayNum.toLocaleString('en-IN')} in LEVEL-11 ]</span></p>
+        <p style="margin:2px 0 2px;white-space:nowrap;">&nbsp;&nbsp;&nbsp;b) Allowed one Addl. Increment for completion of ${milestoneWord.toLowerCase()} Service &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${nextPayDetails.amount.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${nextPayDetails.nextPay.toLocaleString('en-IN')} in LEVEL-11 ]</span></p>
+        <p style="margin:2px 0 10px;">&nbsp;&nbsp;&nbsp;c) Pay finally fixed w.e.f. ${casFmt(memoEffectDate)} in the ${fixed.scaleLabel}${fixed.cellLabel ? ' in CELL-' + fixed.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${fixedNum.toLocaleString('en-IN')}</strong></p>
+        <p style="font-weight:bold;">Date of Next Increment: ${casFmt(memoDni)}</p>
+        <p style="text-align:center;font-weight:bold;margin-top:10px;">Verified and Found Correct</p>
+        <table style="width:100%;margin-top:26px;"><tr>
+            <td style="width:50%;text-align:center;">________________________<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
+            <td style="width:50%;text-align:center;">________________________<br>District Inspector of Schools (S.E.),<br>${district}</td>
+        </tr></table>
+        <p style="margin-top:18px;">Memo No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
+        <p style="margin:8px 0 2px;">Copy forwarded for information and taking necessary action to:</p>
+        <ol style="font-size:.9rem;margin:2px 0;">
+            <li>The ${hoiStatus} of ${fullSchool}</li>
+            <li>${sriSmt} ${staffName}; ${designation}; ${fullSchool}</li>
+        </ol>
+        <p style="text-align:right;margin-top:16px;">District Inspector of Schools (S.E.),<br>${district}</p>
+        </div>`;
+
+    /* ---------- DOC 9: NO-LITIGATION CERTIFICATE (NLC) ---------- */
+    const doc9 = `
+        <p style="text-align:center;font-weight:bold;">Certificate Regarding Non-Litigation Regarding Post and Appointment</p>
+        <p style="text-align:justify;margin-top:16px;">This is to certify that there is no court case or any form of litigation pending against the post and appointment of ${staffName}, who was appointed to the post of ${designation} with effect from ${casFmt(dojCurrentSchool)} at ${schoolName}. Accordingly, the application for approval of the ${milestoneWord.toLowerCase()} Fixation benefit in ${hisHer} favour is being submitted.</p>
+        <table style="width:100%;margin-top:40px;"><tr>
+            <td style="width:50%;">Date: ________________</td>
+            <td style="width:50%;text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td>
+        </tr></table>`;
+
+    /* ---------- DOC 10: FILE COVER SHEET ---------- */
+    const doc10 = `
+        <div class="cas-file-cover">
+            <div class="cover-meta">
+                ${contactNo ? 'Contact No. ' + contactNo + '<br>' : ''}
+                ${email ? 'e-mail ID: ' + email + '<br>' : ''}
+                <div class="cover-school">${schoolName}</div>
+                <div>${schoolAddr}</div>
+                ${subDivision ? '<div>SUB DIVISION: ' + subDivision + '</div>' : ''}
+            </div>
+            <div>
+                <div class="cover-title">APPROVAL FOR ${milestoneWord} FIXATION BENEFIT</div>
+                <div class="cover-meta" style="font-weight:800;margin-top:8px;">w.e.f. :: ${casFmt(effectDate)}</div>
+            </div>
+            <div>
+                <div class="cover-meta" style="font-weight:800;letter-spacing:1px;">IN FAVOUR OF</div>
+                <div class="cover-name" style="margin:6px 0;">${staffName}</div>
+                <div class="cover-meta" style="font-weight:800;">DESIGNATION: ${designation}</div>
+            </div>
+        </div>`;
+
+    /* ---------- DOC 11: CERTIFICATE REGARDING STATUS OF SCHOOL ADMINISTRATION ---------- */
+    const doc11 = govType === 'MC' ? `
+        <p style="text-align:center;font-weight:bold;">Certificate Regarding Status of School Administration</p>
+        <p style="margin-top:16px;">Certified that:</p>
+        <ol style="line-height:1.8;">
+            <li>The Managing Committee of ${schoolName} has been functioning now.</li>
+            <li>The term of the valid Managing Committee is up to ${mcValidUpto}.</li>
+            <li>There is no Court case, legal bar, or any type of litigation regarding the reconstitution of the Managing Committee of ${schoolName}.</li>
+        </ol>
+        <table style="width:100%;margin-top:40px;"><tr>
+            <td style="width:50%;">Date: ________________</td>
+            <td style="width:50%;text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td>
+        </tr></table>` : `
+        <p style="text-align:center;font-weight:bold;">Certificate Regarding Status of School Administration</p>
+        <p style="margin-top:16px;">Certified that:</p>
+        <ol style="line-height:1.8;">
+            <li>The Administrator has been functioning now in this school.</li>
+            <li>There is no court case or any type of litigation against the appointment of the Administrator.</li>
+        </ol>
+        <table style="width:100%;margin-top:40px;"><tr>
+            <td style="width:50%;">Date: ________________</td>
+            <td style="width:50%;text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td>
+        </tr></table>`;
+
+    /* ---------- DOC 12: BENGALI M.C. RESOLUTION (only when Governance = Managing Committee) ---------- */
+    const doc12 = `
+        <p style="font-weight:bold;text-align:center;">পরিচালন সমিতির সভায় গৃহীত সিদ্ধান্ত</p>
+        <p>পরিচালন সমিতির সভাপতি মাননীয় ____________________ মহাশয় অদ্য সভায় সভাপতির আসন গ্রহণ করলে সভার কার্যক্রম শুরু হয়।</p>
+        <p style="text-align:justify;">সভায় অন্যতম আলোচ্য বিষয় ছিল এই স্কুলের ${designation}, মাননীয় ${staffName} মহাশয়/মহাশয়া কর্তৃক ${regimeName} এর অধীনে ${milestoneWordBn}ের একটানা চাকরি সম্পন্ন করার জন্য ক্যারিয়ার অ্যাডভান্সমেন্ট স্কিমের সুবিধা মঞ্জুর করার জন্য জমা দেওয়া আবেদন ও বিদ্যালয়ের ${hoiStatus}-এর পেশ করা সংশ্লিষ্ট নথিপত্র যাচাই করে দেখা যায় যে ${staffName}, ${casFmt(doj)} তারিখ থেকে ${fullSchool} এ অনুমোদিত ${designation} হিসাবে নিরবচ্ছিন্ন এবং সন্তোষজনক চাকুরি করে চলেছেন${approvalNo ? ' [অনুমোদন নম্বর ' + approvalNo + ']' : ''}।</p>
+        <p style="text-align:justify;">ফলস্বরূপ, ${casFmt(doj)} তারিখ থেকে ধারাবাহিক চাকরির ভিত্তিতে ${casFmt(completionDate)} তারিখে তিনি পূর্ণ ${milestoneWordBn} নিরবচ্ছিন্ন এবং সন্তোষজনক চাকুরি সম্পন্ন করেছেন।</p>
+        <p style="text-align:justify;">এমতাবস্থায়, ${regimeName} এর অধীনে ${goRef} অনুসারে ও ${staffName} মহাশয়/মহাশয়ার আবেদনক্রমে তাঁর অনুকূলে ${milestoneWordBn}ের নিরবচ্ছিন্ন চাকুরি সম্পন্ন করার জন্য ক্যারিয়ার অ্যাডভান্সমেন্ট স্কিমের সুবিধা ${casFmt(effectDate)} তারিখ থেকে কার্যকর হবে। ${fixed.scaleLabel} স্কেলে উন্নীতকরণ তথা ${milestoneWord} Fixation-এর অনুমোদনের আবেদন District Inspector of Schools (S.E.), ${district} মহাশয়ের নিকট প্রেরণের সর্বসম্মত সিদ্ধান্ত গৃহীত হলো। এছাড়া উল্লেখযোগ্য যে, তাঁর সার্ভিস রেকর্ডে কোনো মামলা-মোকদ্দমা বা আপত্তি নেই।</p>
+        <p style="text-align:justify;">অদ্য সভায় বিদ্যালয়ের ${hoiStatus}-কে প্রয়োজনীয় নথিপত্র ও আবেদনপত্র District Inspector of Schools (S.E.), ${district} অফিসে প্রেরণ করার ক্ষমতা ও দায়িত্ব অর্পণ করা হলো এবং অতি সত্বর এ বিষয়ে প্রয়োজনীয় ব্যবস্থা গ্রহণের জন্য অনুরোধ করা হলো।</p>
+        <p style="text-align:justify;">উপরোক্ত সিদ্ধান্তসমূহ অত্র সভায় সর্বসম্মতিক্রমে গৃহীত ও অনুমোদিত হলো। সভায় আর কোনো আলোচ্য বিষয় না থাকায় সভাপতি মহাশয়কে ধন্যবাদ জ্ঞাপনপূর্বক সভার কার্য সমাপ্ত করা হলো।</p>
+        <table style="width:100%;margin-top:30px;"><tr>
+            <td style="width:50%;">তারিখ: ${casFmt(optionDate)}</td>
+            <td style="width:50%;text-align:right;">সম্পাদক / সভাপতি<br>পরিচালন সমিতি</td>
+        </tr></table>`;
+
+    const payStructureDoc = casBuildPayStructureDoc(type, effectDate, staffName, designation, schoolName, schoolAddr, doj);
+
+    /* ---------- DOC 13: CAS CHECK LIST ---------- */
+    const doc13 = `
+        <div style="font-family:'Times New Roman',Times,serif;">
+        <h2 style="text-align:center;text-decoration:underline;margin-bottom:4px;">CHECK LIST FOR ${milestoneWord} CAS FIXATION</h2>
+        <p style="text-align:center;font-weight:bold;margin-top:0;">${staffName} ; ${designation} ; ${schoolName}</p>
+        <table style="width:100%;border-collapse:collapse;font-size:.92rem;">
+          <tr><th style="border:1px solid #000;padding:5px;width:8%;">Sl.</th><th style="border:1px solid #000;padding:5px;text-align:left;">Document / Record</th><th style="border:1px solid #000;padding:5px;width:18%;">Checked</th></tr>
+          ${[
+            'Forwarding letter of the HOI',
+            'Incumbent\'s application (Part-A)',
+            'Photocopy of M.C. Resolution / Administrator\'s Order',
+            'Photocopies of all approvals, including 1st approval',
+            `Triplicate copies of the ${milestoneWord.toLowerCase()} fixation proforma (Part-B)`,
+            'Pay structure from 1st joining to date',
+            'Attested photocopy of updated Service Book with updated leave account and B.Ed details (if applicable)',
+            'Photocopy of prior option/fixation orders (ROPA-2009 & 2019, as applicable)',
+            'Photocopy of educational qualification certificates/mark-sheets',
+            'Photocopy of current month\'s pay slip',
+            'No Litigation Certificate',
+            'M.C. Validity Certificate',
+            'Joining Report (all service)',
+            'Appointment letter / transfer order (all service)',
+            'S.S.C. recommendation (all service)',
+            'Date of Next Increment',
+            'Certificate of reason for delay (if applicable)'
+          ].map((x,i)=>`<tr><td style="border:1px solid #000;padding:5px;text-align:center;">${i+1}</td><td style="border:1px solid #000;padding:5px;">${x}</td><td style="border:1px solid #000;padding:5px;text-align:center;">☐</td></tr>`).join('')}
+        </table>
+        <table style="width:100%;margin-top:30px;"><tr><td>Date: ________________</td><td style="text-align:right;">________________________<br>${hoiStatus}<br>${schoolName}</td></tr></table>
+        </div>`;
+
+    const docs = [
+        { title: 'Part A — Option &amp; Declaration (Staff)', body: doc1 },
+        { title: 'Part B — Fixation Proforma (by HOI)', body: doc2 },
+        { title: `Declaration cum Application cum Option Letter (Staff → ${govType === 'Administrator' ? 'The Administrator' : 'Secretary / President, Managing Committee'})`, body: doc3 },
+        { title: 'HOI Report', body: doc4 },
+        { title: govType === 'MC' ? 'Managing Committee Resolution (English)' : 'Administrator Order', body: doc5 },
+        { title: 'Forwarding Letter to the District Inspector of Schools', body: doc6 },
+        { title: 'Final Acceptance / Finalization Request to the District Inspector of Schools', body: doc7 },
+        { title: "District Inspector's Office Memorandum (Final Order)", body: doc8 },
+        { title: 'No-Litigation Certificate (NLC)', body: doc9 },
+        { title: `Pay Structure — ${milestoneWord}`, body: payStructureDoc, landscape: true },
+        { title: 'File Cover Sheet', body: doc10 },
+        { title: `Certificate Regarding Status of School Administration (${govType === 'MC' ? 'Managing Committee' : 'Administrator'})`, body: doc11 },
+        { title: `CAS Check List — ${milestoneWord}`, body: doc13 }
+    ];
+    if (govType === 'MC') {
+        docs.push({ title: 'পরিচালন সমিতির সিদ্ধান্ত — Bengali M.C. Resolution', body: doc12 });
+    }
+
+    window._casDocs = docs;
+
+    statusEl.style.color = '#065f46';
+    statusEl.textContent = `${milestoneWord} milestone detected under ${regimeName} (${goRef.split(',')[0]}). Existing pay ${existing.payLabel} → fixed at ${fixed.payLabel}, effective ${casFmt(effectDate)}. ${docs.length} documents generated below.`;
+
+    previewEl.innerHTML = `
+        <div class="btn-group" style="margin-bottom:12px;">
+            <button type="button" class="btn-print" onclick="casPrintAll()">Print All ${docs.length} Documents</button>
+        </div>
+        ${docs.map((d, i) => `
+            <div style="border:1px solid #cbd5e1;border-radius:8px;padding:18px 22px;margin-bottom:16px;background:#fff;font-family:'Times New Roman',Times,serif;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;">
+                    <strong style="font-family:Arial,sans-serif;font-size:.9rem;color:#1e3a8a;">${i + 1}. ${d.title}</strong>
+                    <button type="button" class="btn-print" style="padding:5px 12px;font-size:.75rem;" onclick="casPrintOne(${i})">Print</button>
+                </div>
+                <div style="font-size:.92rem;line-height:1.55;">${d.body}</div>
+            </div>`).join('')}
+    `;
+}
+
+/* ---------- DASHBOARD SAVE / LOAD / JSON IMPORT / EXPORT ---------- */
+const DASHBOARD_STORAGE_KEY = 'TFHS_ROPA_PAY_FIXATION_DASHBOARD_V3';
+let dashboardSaveArmed = false;
+
+function dashboardFieldState() {
+    const state = {};
+    document.querySelectorAll('input[id], select[id], textarea[id]').forEach(el => {
+        if (el.id === 'dashboardJsonImport') return;
+        state[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+    return state;
+}
+
+function collectDashboardState() {
+    return {
+        version: 3,
+        savedAt: new Date().toISOString(),
+        fields: dashboardFieldState(),
+        periods: JSON.parse(JSON.stringify(periods || [])),
+        masterMlEntries: JSON.parse(JSON.stringify(masterMlEntries || [])),
+        transferEvents: JSON.parse(JSON.stringify(transferEvents || [])),
+        casPriorSchools: casGetPriorSchools().map(s => ({
+            name: s.name,
+            doj: s.doj ? toISO(s.doj) : '',
+            dol: s.dol ? toISO(s.dol) : ''
+        }))
+    };
+}
+
+function applyDashboardState(data) {
+    if (!data || typeof data !== 'object') throw new Error('Invalid dashboard JSON.');
+    const fields = data.fields || {};
+    Object.keys(fields).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || id === 'dashboardJsonImport') return;
+        if (el.type === 'checkbox') el.checked = !!fields[id];
+        else el.value = fields[id] ?? '';
+    });
+
+    periods = Array.isArray(data.periods) ? data.periods : [];
+    masterMlEntries = Array.isArray(data.masterMlEntries) ? data.masterMlEntries : [];
+    transferEvents = Array.isArray(data.transferEvents) ? data.transferEvents : [];
+    const allIds = [
+        ...periods.map(p => Number(p.id) || 0),
+        ...masterMlEntries.map(e => Number(e.id) || 0),
+        ...transferEvents.map(t => Number(t.id) || 0)
+    ];
+    idCounter = Math.max(1, ...allIds, 0) + 1;
+
+    document.getElementById('casPriorSchoolsList').innerHTML = '';
+    casPriorSchoolSeq = 0;
+    (data.casPriorSchools || []).forEach(s => casAddPriorSchool(s.name || '', s.doj || '', s.dol || ''));
+
+    togglePromotionSection();
+    toggleRopa09Section();
+    casToggleGovFields();
+    toggleTransferUI();
+    calculateDOR();
+    assignMlEntries();
+    renderAll();
+    const status = document.getElementById('dataSaveStatus');
+    if (status) status.textContent = 'Dashboard data loaded successfully.';
+}
+
+function saveDashboardData(showMessage = true) {
+    try {
+        const data = collectDashboardState();
+        localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(data));
+        dashboardSaveArmed = true;
+        if (showMessage) {
+            const status = document.getElementById('dataSaveStatus');
+            if (status) status.textContent = '✓ Data saved in this browser at ' + new Date().toLocaleString('en-IN');
+        }
+        return data;
+    } catch (err) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Save failed: ' + err.message; }
+        return null;
+    }
+}
+
+function loadSavedDashboardData() {
+    try {
+        const raw = localStorage.getItem(DASHBOARD_STORAGE_KEY);
+        if (!raw) {
+            const status = document.getElementById('dataSaveStatus');
+            if (status) status.textContent = 'No saved dashboard data found in this browser.';
+            return;
+        }
+        applyDashboardState(JSON.parse(raw));
+        dashboardSaveArmed = true;
+    } catch (err) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Load failed: ' + err.message; }
+    }
+}
+
+function exportDashboardJSON() {
+    const data = saveDashboardData(false) || collectDashboardState();
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safeName = (document.getElementById('staffName').value || 'Staff').replace(/[^a-z0-9_-]+/gi, '_');
+    a.href = url;
+    a.download = `TFHS_ROPA_${safeName}_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    const status = document.getElementById('dataSaveStatus');
+    if (status) status.textContent = '✓ JSON exported successfully.';
+}
+
+function importDashboardJSON(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            applyDashboardState(data);
+            localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(collectDashboardState()));
+            dashboardSaveArmed = true;
+            const status = document.getElementById('dataSaveStatus');
+            if (status) status.textContent = '✓ JSON imported, applied and saved to this browser.';
+        } catch (err) {
+            const status = document.getElementById('dataSaveStatus');
+            if (status) { status.style.color = '#b91c1c'; status.textContent = 'Import failed: ' + err.message; }
+        } finally {
+            event.target.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
+
+function armDashboardAutoSave() {
+    document.addEventListener('change', function(e) {
+        if (!dashboardSaveArmed) return;
+        if (e.target && e.target.id !== 'dashboardJsonImport') saveDashboardData(false);
+    });
+}
+
+function casPrintWindowShell(innerHtml, title, landscape = false) {
+    const w = window.open('', '_blank');
+    w.document.write(`<!DOCTYPE html><html><head><title>${title}</title><meta charset="utf-8">
+        <style>
+            @page { size: A4 ${landscape ? 'landscape' : 'portrait'}; margin: ${landscape ? '10mm 8mm' : '18mm 16mm'}; }
+            body { font-family: 'Times New Roman', Times, serif; font-size: 12.5pt; color:#000; line-height:1.5; }
+            .cas-doc-page { page-break-after: always; padding-bottom: 8mm; }
+            .cas-doc-page:last-child { page-break-after: auto; }
+            .cas-doc-page:has(.cas-di-office-memo) { page-break-after: always; }
+            .cas-doc-page:has(.cas-file-cover) { padding-bottom: 0; }
+            p { margin: 6px 0; }
+            table { border-collapse: collapse; }
+            .cas-pay-structure { width:100%; font-family:'Times New Roman', Times, serif; color:#000; }
+            .cas-pay-structure .ps-title { text-align:center; font-size:15pt; font-weight:900; line-height:1.2; }
+            .cas-pay-structure .ps-school { text-align:center; font-size:11pt; font-weight:800; margin-top:3px; }
+            .cas-pay-structure .ps-cutoff { text-align:right; font-size:8pt; font-weight:700; margin:4px 0; }
+            .cas-pay-structure .ps-table { width:100%; table-layout:fixed; font-size:8pt; }
+            .cas-pay-structure .ps-table th,.cas-pay-structure .ps-table td { border:1px solid #000; padding:2.5px 3px; vertical-align:middle; }
+            .cas-pay-structure .ps-table th { font-weight:900; text-align:center; }
+            .cas-pay-structure .ps-table td:nth-child(1) { width:10%; font-weight:700; }
+            .cas-pay-structure .ps-table td:nth-child(2) { width:27%; }
+            .cas-pay-structure .ps-table td:nth-child(3) { width:9%; text-align:center; }
+            .cas-pay-structure .ps-table td:nth-child(4) { width:7%; text-align:center; }
+            .cas-pay-structure .ps-table td:nth-child(5) { width:10%; text-align:right; font-weight:700; }
+            .cas-pay-structure .ps-table td:nth-child(6) { width:27%; }
+            .cas-pay-structure .ps-table td:nth-child(7) { width:10%; text-align:center; font-weight:700; }
+        </style></head><body>${innerHtml}</body></html>`);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 300);
+}
+
+function casPrintOne(i) {
+    const d = window._casDocs && window._casDocs[i];
+    if (!d) return;
+    casPrintWindowShell(`<div class="cas-doc-page">${d.body}</div>`, d.title, !!d.landscape);
+}
+
+function casPrintAll() {
+    const docs = window._casDocs || [];
+    if (!docs.length) return;
+    casPrintWindowShell(docs.map(d => `<div class="cas-doc-page">${d.body}</div>`).join(''), 'CAS Documents', false);
+}
+
+// Start one-way auto-save only after the user has explicitly saved/loaded data once.
+armDashboardAutoSave();
+</script>
+
+<script>document.addEventListener('DOMContentLoaded', casInitDefaultStaffData);</script>
+</body>
+</html>
