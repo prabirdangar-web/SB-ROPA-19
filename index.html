@@ -355,7 +355,7 @@
         </div>
     </div>
     <div class="output-box" style="background-color:#eff6ff;border-left-color:#1d4ed8;">
-        <strong>Fixation Rule Settings:</strong> Functional post promotions grant an extra increment before matching the target scale. Higher scale movements for qualification/upgradations bypass the promotional increment step. Upon promotion, post-promotion annual increment dates are strictly governed with respect to the Date of Promotion (as per ROPA rules): in ROPA-1998, the increment month shifts to the promotion month; in ROPA-2009/2019, if service in the promoted post as on 1st July is less than 6 months (promotion date between 2nd Jan and 30th Jun), the 1st July increment of that year is skipped and granted on 1st July of the next year.
+        <strong>Fixation Rule Settings:</strong> Functional post promotions grant an extra increment before matching the target scale. Higher scale movements for qualification/upgradations bypass the promotional increment step. For HM/AHM (Level-16), one increment in the existing level is always added before fitment. If joining as HM/AHM is between 2nd January and 30th June, the option is exercised w.e.f. 1st July of that year; the pay table shows 1st July to 1st July (HM/AHM increment/option row) followed by 1st July to 30th June of the next year. If the joining date is outside 2nd January–30th June, no same-year 1st July option row is created and fixation remains on the actual joining date.
     </div>
 
     <div class="btn-group" style="margin:10px 0;">
@@ -1127,10 +1127,11 @@
     function sortTimelineEvents(events) {
         function eventPriority(ev) {
             if (ev.isInitial) return 0;
-            if (ev.isAnnual) return 1;
+            if (ev.isAnnual && !ev.isHmAhmOptionIncrementRow) return 1;
             if (ev.isMilestone) return 2;
             if (ev.isPromotion) return 3;
-            return 4;
+            if (ev.isHmAhmOptionIncrementRow) return 4;
+            return 5;
         }
         events.sort((a, b) => {
             let yA = a.date.getFullYear(), yB = b.date.getFullYear();
@@ -1296,7 +1297,7 @@
                 }
             }
             compiledRows.push({
-                date: ev.date,
+                date: (ev.isPromotion && promoDetail && promoDetail.targetLevel === 16) ? promoDetail.date : ev.date,
                 label: ev.label,
                 scaleStr: ropa98ScaleLabel(currentScaleKey),
                 trackCol: '',
@@ -1323,7 +1324,31 @@
 
         const promotionActive = (promotionDate instanceof Date && !isNaN(promotionDate) && promotionDate >= optionDate && promotionDate <= endDate);
         if (promotionActive) {
-            pushEvent(promotionDate, { label: evType === 'promo' ? "PROMOTION" : "HIGHER SCALE", isPromotion: true, targetGp: promotionTargetGp, exactPromotionDate: promotionDate });
+            const targetLevelForPromotion = levelMap19[promotionTargetGp] || levelInput;
+            const hmAhmOptionApplied = targetLevelForPromotion === 16 && isInPromoIncrWindow(promotionDate);
+
+            pushEvent(promotionDate, {
+                label: evType === 'promo' ? "PROMOTION" : "HIGHER SCALE",
+                isPromotion: true,
+                targetGp: promotionTargetGp,
+                exactPromotionDate: promotionDate,
+                hmAhmOptionApplied
+            });
+
+            // When an HM/AHM joining date is 02-Jan to 30-Jun, the option is exercised
+            // from 01-Jul. Keep a same-day INCREMENT row so the pay table reads:
+            // 01-Jul to 01-Jul (INCREMENT), followed by 01-Jul to 30-Jun of next year.
+            // This row is display/period-control only: the HM/AHM one increment is already
+            // included in Sl. 5.a and must NOT be added a second time.
+            if (hmAhmOptionApplied) {
+                const optionDate = new Date(promotionDate.getFullYear(), 6, 1);
+                pushEvent(optionDate, {
+                    label: "INCREMENT",
+                    isAnnual: true,
+                    isHmAhmOptionIncrementRow: true,
+                    notionalDate: optionDate
+                });
+            }
         }
 
         const isExcludedFrom18Y = [4700, 4800, 5400].includes(gpInput);
@@ -1632,17 +1657,40 @@
                 let asOnDate = new Date(ev.date);
                 asOnDate.setDate(asOnDate.getDate() - 1);
                 
-                // One-increment-in-old-level rule before fitment into the target level:
-                // - Target Level 16 (HM/AHM): applies to BOTH 'promo' and 'highscale' events —
-                //   the increment is added only if the date of joining as HM/AHM falls between
-                //   2nd January and 30th June (inclusive) of that year; otherwise no increment.
-                // - Any other target level: unchanged prior behaviour — 'promo' always gets the
-                //   increment, 'highscale' (direct fitment) never does.
-                let addIncr = (targetLevel === 16) ? isInPromoIncrWindow(ev.date) : (evType === 'promo');
+                // HM/AHM (Level-16) rule:
+                // 1) The two HM/AHM increments in the existing level apply ONLY when
+                //    the joining date is within 02-Jan to 30-Jun.
+                // 2) In that window the beneficial option applies and fixation/effective
+                //    date becomes 01-Jul of the same year.
+                // 3) Outside that window, 5.a and 5.c are NOT applicable; existing pay is
+                //    fitted directly into Level-16 on the actual joining date.
+                // For other target levels, retain the existing promotion/high-scale logic.
+                let isHmAhm = (targetLevel === 16);
+                let optionApplied = isHmAhm && isInPromoIncrWindow(ev.date);
+                // HM/AHM extra increment benefit applies ONLY when DOJ/joining date
+                // falls in the 02-Jan to 30-Jun window. Outside this window, 5.a and
+                // 5.c are NOT applicable and the existing pay is fitted directly to L-16.
+                let addIncr = isHmAhm ? true : (evType === 'promo');
+                let fixDate = optionApplied
+                    ? new Date(ev.date.getFullYear(), 6, 1)
+                    : new Date(ev.date);
 
                 if (addIncr) {
-                    let oneStepValue = matrixData19[runningLevel][cellData.index + 1] || runningBasicPay;
-                    let fitted = findCell19(targetLevel, oneStepValue);
+                    // HM/AHM Level-16 fixation: TWO increments are stepped in the
+                    // existing level before fitment into Level-16. Example: L-15
+                    // Cell 14 Rs.62,600 -> Cell 15 Rs.64,500 -> Cell 16 Rs.66,400
+                    // and only then fit into L-16, giving Rs.67,000.
+                    const oldLadder = matrixData19[runningLevel] || [];
+                    const firstIdx = cellData.index + 1;
+                    const secondIdx = cellData.index + 2;
+                    const firstStepValue = oldLadder[firstIdx] || runningBasicPay;
+                    const secondStepValue = oldLadder[secondIdx] || firstStepValue;
+                    // 5.a is conditional; 5.c is compulsory for every HM/AHM fixation.
+                    const oneStepValue = optionApplied ? firstStepValue : existingBasic;
+                    const oneStepAdded = optionApplied ? (firstStepValue - existingBasic) : 0;
+                    const twoStepValue = optionApplied ? secondStepValue : firstStepValue;
+                    const secondStepAdded = twoStepValue - oneStepValue;
+                    let fitted = findCell19(targetLevel, twoStepValue);
                     runningLevel = targetLevel;
                     runningGp = ev.targetGp;
                     runningBasicPay = fitted.value;
@@ -1650,16 +1698,18 @@
                     slipBlockHTML = `
                         <div class="slip-box">
                             <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
-                            <div class="slip-row"><span>2.a) One Increment within Existing Level ${oldLevel}</span><span>Rs. ${oneStepValue.toLocaleString('en-IN')}</span></div>
-                            <div class="slip-row"><span>&nbsp;&nbsp;&nbsp;b) Fitted into Target Level ${targetLevel} (equal/next-higher cell)</span><span>&mdash;</span></div>
-                            <div class="slip-row"><span class="slip-bold">&nbsp;&nbsp;&nbsp;c) Pay Fixed on ${evType === 'promo' ? 'Promotion' : 'Higher Scale'} w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')} (${fitted.cell})</span></div>
+                            <div class="slip-row"><span>2.a) One Increment within Existing Level ${oldLevel}</span><span>Rs. ${oneStepAdded.toLocaleString('en-IN')} &rarr; Rs. ${oneStepValue.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span>2.b) One More Increment for HM/AHM in Existing Level ${oldLevel}</span><span>Rs. ${secondStepAdded.toLocaleString('en-IN')} &rarr; Rs. ${twoStepValue.toLocaleString('en-IN')}</span></div>
+                            <div class="slip-row"><span>2.c) Fit into Target Level ${targetLevel} at equal/next-higher cell</span><span>Rs. ${runningBasicPay.toLocaleString('en-IN')} (${fitted.cell})</span></div>
+                            <div class="slip-row"><span class="slip-bold">2.d) Pay Fixed on ${evType === 'promo' ? 'Promotion' : 'Higher Scale'} w.e.f ${formatDate(fixDate)}${optionApplied ? ' (as per option)' : ''}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')} (${fitted.cell})</span></div>
                         </div>`;
                     promoDetail = {
-                        evType, date: new Date(ev.date), asOnDate,
+                        evType, date: fixDate, actualPromotionDate: new Date(ev.date), asOnDate,
                         oldLevel, oldGp, existingBasic, existingCellLabel,
-                        oneStepValue, oneStepAdded: oneStepValue - existingBasic,
+                        oneStepValue, oneStepAdded, twoStepValue, secondStepAdded,
                         targetLevel, targetGp: ev.targetGp,
-                        fittedValue: runningBasicPay, fittedCell: fitted.cell
+                        fittedValue: runningBasicPay, fittedCell: fitted.cell,
+                        optionApplied
                     };
                 } else {
                     let fitted = findCell19(targetLevel, runningBasicPay);
@@ -1682,10 +1732,21 @@
                     };
                 }
             } else if (ev.isAnnual) {
-                runningBasicPay = matrixData19[runningLevel][cellData.index + 1] || runningBasicPay;
-                colTrackingInfo = findCell19(runningLevel, runningBasicPay).cell;
-                if (ev.isLwpDeferred) {
-                    slipBlockHTML = `<div class="slip-box">${lwpNote}</div>`;
+                if (ev.isHmAhmOptionIncrementRow) {
+                    // Both HM/AHM increments have already been applied in Sl. 5.a/5.c before
+                    // Level-16 fitment. Do not add another increment on the same 01-Jul.
+                    colTrackingInfo = findCell19(runningLevel, runningBasicPay).cell;
+                    slipBlockHTML = `
+                        <div class="slip-box">
+                            <div class="slip-row"><span class="slip-bold">HM/AHM OPTION — INCREMENT DATE</span><span>01-07-${ev.date.getFullYear()}</span></div>
+                            <div class="slip-row"><span>One increment already included in HM/AHM fixation at Sl. 5.a; no second increment is added.</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')}</span></div>
+                        </div>`;
+                } else {
+                    runningBasicPay = matrixData19[runningLevel][cellData.index + 1] || runningBasicPay;
+                    colTrackingInfo = findCell19(runningLevel, runningBasicPay).cell;
+                    if (ev.isLwpDeferred) {
+                        slipBlockHTML = `<div class="slip-box">${lwpNote}</div>`;
+                    }
                 }
             } else if (ev.isMilestone) {
                 let postMilestone = matrixData19[runningLevel][cellData.index + 1] || runningBasicPay;
@@ -2792,6 +2853,8 @@ function casGenerateHmAhmForm() {
     }
     const dniLabel = dniRow ? formatDate(dniRow.date) : `1st July, ${pd.date.getFullYear() + 1}`;
     const withIncr = pd.oneStepAdded > 0;
+    const hmAhmIncrText = withIncr ? '' : ' (Not Applicable — joining date is outside 02-Jan to 30-Jun window)';
+    const secondIncrText = ' (Compulsory for joining as HM/AHM)';
 
     const html = `
         <h2 style="text-align:center;text-decoration:underline;margin-bottom:6px;">(FORM FOR FIXATION OF PAY FOR HM / AHM AS PER ROPA'19)</h2>
@@ -2802,9 +2865,11 @@ function casGenerateHmAhmForm() {
             <tr><td class="hn">3</td><td>Designation of the Employee : <strong>${oldDesignation}</strong></td></tr>
             <tr><td class="hn">4</td><td>Status (Substantive/Officiating) : <strong>${empStatus}</strong></td></tr>
             <tr><td class="hn">5</td><td>Existing Basic Pay as per ROPA'19 Rs. <strong>${pd.existingBasic.toLocaleString('en-IN')}</strong> (Level <strong>${pd.oldLevel}</strong>, Cell <strong>${pd.existingCellLabel}</strong>) in the pay matrix as on <strong>${formatDate(pd.asOnDate)}</strong> (Date, preceding the date of joining as HM/AHM)</td></tr>
-            <tr><td class="hn">5.a</td><td>Add: One increment in the same pay level (<strong>if applicable</strong>) : Rs. ${withIncr ? '<strong>' + pd.oneStepAdded.toLocaleString('en-IN') + '</strong>' : '<em>N.A. &mdash; ' + (pd.targetLevel === 16 ? 'Date of joining as HM/AHM does not fall between 2nd January and 30th June' : 'Higher Scale/Upgradation, direct fitment') + ', no increment added</em>'}</td></tr>
-            <tr><td class="hn">5.b</td><td>Amount arrived at : Rs. <strong>${(withIncr ? pd.oneStepValue : pd.existingBasic).toLocaleString('en-IN')}</strong></td></tr>
-            <tr><td class="hn">6</td><td>Basic Pay fixed at Rs. <strong>${pd.fittedValue.toLocaleString('en-IN')}</strong> in the pay matrix, Level <strong>${pd.targetLevel}</strong>, Cell <strong>${pd.fittedCell}</strong> on <strong>${formatDate(pd.date)}</strong> (date of joining as HM/AHM)</td></tr>
+            <tr><td class="hn">5.a</td><td>Add: One increment in the same pay level${hmAhmIncrText} : ${withIncr ? 'Rs. <strong>' + pd.oneStepAdded.toLocaleString('en-IN') + '</strong>' : '<strong>Not Applicable</strong>'}</td></tr>
+            <tr><td class="hn">5.b</td><td>Amount arrived at : <strong>${withIncr ? 'Rs. ' + pd.oneStepValue.toLocaleString('en-IN') : 'Rs. ' + pd.existingBasic.toLocaleString('en-IN')}</strong></td></tr>
+            <tr><td class="hn">5.c</td><td>Add: One more increment for joining as HM/AHM in the same pay level${secondIncrText} : Rs. <strong>${pd.secondStepAdded.toLocaleString('en-IN')}</strong></td></tr>
+            <tr><td class="hn">5.d</td><td>Amount arrived at after HM/AHM increment : <strong>Rs. ${pd.twoStepValue.toLocaleString('en-IN')}</strong></td></tr>
+            <tr><td class="hn">6</td><td>Basic Pay fixed at Rs. <strong>${pd.fittedValue.toLocaleString('en-IN')}</strong> in the pay matrix, Level <strong>${pd.targetLevel}</strong>, Cell <strong>${pd.fittedCell}</strong> on <strong>${formatDate(pd.date)}</strong> (date of joining as HM/AHM${pd.optionApplied ? ' / as per option from 01-07-' + pd.date.getFullYear() : ''})</td></tr>
             <tr><td class="hn">7</td><td>Date of next Annual increment : <strong>${dniLabel}</strong></td></tr>
         </table>
         <p style="margin-top:14px;">Checked &amp; found in order</p>
