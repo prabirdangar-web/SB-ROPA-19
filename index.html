@@ -3164,12 +3164,11 @@ function generateCasDocuments(type) {
         <p style="font-weight:bold;">Date of Next Increment: ${casFmt(memoDni)}</p>
         <p style="text-align:center;font-weight:bold;margin-top:14px;">Verified and Found Correct</p>
         <table style="width:100%;margin-top:16mm;"><tr>
-        
             <td style="width:50%;text-align:center;">________________________<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
             <td style="width:50%;text-align:center;">________________________<br>District Inspector of Schools (S.E.),<br>${district}</td>
         </tr></table>
         <p style="margin-top:16mm;">Memo No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
-        <div style="height:30mm;" title="Space reserved for District Inspector's Office (DI Off) seal/stamp"></div>
+        <div style="height:20mm;" title="Space reserved for District Inspector's Office (DI Off) seal/stamp"></div>
         <p style="margin:8px 0 2px;">Copy forwarded for information and taking necessary action to:</p>
         <ol style="font-size:.9rem;margin:2px 0;">
             <li>The ${hoiStatus} of ${fullSchool}</li>
@@ -3198,7 +3197,6 @@ function generateCasDocuments(type) {
                 <div>${schoolAddr}</div>
                 ${subDivision ? '<div>SUB DIVISION: ' + subDivision + '</div>' : ''}
             </div>
-            <div>
                 <div class="cover-title">APPROVAL FOR ${milestoneWord} FIXATION BENEFIT</div>
                 <div class="cover-meta" style="font-weight:800;margin-top:8px;">w.e.f. :: ${casFmt(effectDate)}</div>
             </div>
