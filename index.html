@@ -482,7 +482,7 @@
     </div>
 
     <div id="ropa09Section">
-        <h3>Generated ROPA-2009 Notional Fixation Timeline (Up to 31-12-2019)</h3>
+        <h3>Generated ROPA-2009  Fixation Timeline (Up to 31-12-2019)</h3>
         <div class="table-responsive">
             <table id="dashboardTable09">
                 <thead>
@@ -654,7 +654,7 @@
         </div>
         <div class="form-group">
             <label>School Postal Address (for letterheads)</label>
-            <input type="text" id="casSchoolAddress" value="P.O.-TALDANGRA ; BLOCK-TALDANGRA, DISTRICT-BANKURA PIN-722152">
+            <input type="text" id="casSchoolAddress" value="P.O.-TALDANGRA ; BLOCK-TALDANGRA,SUB DIVISION-KHATRA DISTRICT-BANKURA PIN-722152">
         </div>
         <div class="form-group">
             <label>District</label>
@@ -786,7 +786,7 @@
     </div>
 
     <div id="sbRopa09Block">
-        <h2 class="sb-section-title">ROPA-2009 Notional Fixation (Up to 31-12-2019)</h2>
+        <h2 class="sb-section-title">ROPA-2009  Fixation (Up to 31-12-2019)</h2>
         <table class="sb-main-table" id="sbTable09">
             <thead>
                 <tr>
@@ -3164,11 +3164,12 @@ function generateCasDocuments(type) {
         <p style="font-weight:bold;">Date of Next Increment: ${casFmt(memoDni)}</p>
         <p style="text-align:center;font-weight:bold;margin-top:14px;">Verified and Found Correct</p>
         <table style="width:100%;margin-top:16mm;"><tr>
+        
             <td style="width:50%;text-align:center;">________________________<br>Assistant Inspector of Schools (S.E.),<br>${district}</td>
             <td style="width:50%;text-align:center;">________________________<br>District Inspector of Schools (S.E.),<br>${district}</td>
         </tr></table>
         <p style="margin-top:16mm;">Memo No. ________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Date: ________________</p>
-        <div style="height:26mm;" title="Space reserved for District Inspector's Office (DI Off) seal/stamp"></div>
+        <div style="height:30mm;" title="Space reserved for District Inspector's Office (DI Off) seal/stamp"></div>
         <p style="margin:8px 0 2px;">Copy forwarded for information and taking necessary action to:</p>
         <ol style="font-size:.9rem;margin:2px 0;">
             <li>The ${hoiStatus} of ${fullSchool}</li>
@@ -3205,6 +3206,7 @@ function generateCasDocuments(type) {
                 <div class="cover-meta" style="font-weight:800;letter-spacing:1px;">IN FAVOUR OF</div>
                 <div class="cover-name" style="margin:6px 0;">${staffName}</div>
                 <div class="cover-meta" style="font-weight:800;">DESIGNATION: ${designation}</div>
+                
             </div>
         </div>`;
 
