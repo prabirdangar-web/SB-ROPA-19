@@ -335,7 +335,7 @@
         </div>
         <div class="form-group">
             <label>Date of Event (Promotion / Higher Scale)</label>
-            <input type="date" id="promotionDate" value="2007-10-06">
+            <input type="date" id="promotionDate" value="2022-03-22">
         </div>
         <div class="form-group">
             <label>Target Grade Pay</label>
@@ -1003,6 +1003,17 @@
         return (increment % 10 < 1) ? Math.floor(increment / 10) * 10 : Math.ceil(increment / 10) * 10;
     }
 
+    // True when `date` falls between 2nd January and 30th June (inclusive) of its own calendar year.
+    // Used for the HM/AHM (Level 16) pay-fixation rule: the one-increment-in-old-level benefit is
+    // added only when joining falls in this window; otherwise no increment is added.
+    function isInPromoIncrWindow(date) {
+        const y = date.getFullYear();
+        const start = new Date(y, 0, 2);   // 2 January
+        const end = new Date(y, 5, 30);    // 30 June
+        const d = new Date(y, date.getMonth(), date.getDate());
+        return d >= start && d <= end;
+    }
+
     function findCell19(level, basic) {
         const arr = matrixData19[level];
         if (!arr) return { cell: "N/A", value: basic, index: 0 };
@@ -1621,7 +1632,15 @@
                 let asOnDate = new Date(ev.date);
                 asOnDate.setDate(asOnDate.getDate() - 1);
                 
-                if (evType === 'promo') {
+                // One-increment-in-old-level rule before fitment into the target level:
+                // - Target Level 16 (HM/AHM): applies to BOTH 'promo' and 'highscale' events —
+                //   the increment is added only if the date of joining as HM/AHM falls between
+                //   2nd January and 30th June (inclusive) of that year; otherwise no increment.
+                // - Any other target level: unchanged prior behaviour — 'promo' always gets the
+                //   increment, 'highscale' (direct fitment) never does.
+                let addIncr = (targetLevel === 16) ? isInPromoIncrWindow(ev.date) : (evType === 'promo');
+
+                if (addIncr) {
                     let oneStepValue = matrixData19[runningLevel][cellData.index + 1] || runningBasicPay;
                     let fitted = findCell19(targetLevel, oneStepValue);
                     runningLevel = targetLevel;
@@ -1633,10 +1652,10 @@
                             <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
                             <div class="slip-row"><span>2.a) One Increment within Existing Level ${oldLevel}</span><span>Rs. ${oneStepValue.toLocaleString('en-IN')}</span></div>
                             <div class="slip-row"><span>&nbsp;&nbsp;&nbsp;b) Fitted into Target Level ${targetLevel} (equal/next-higher cell)</span><span>&mdash;</span></div>
-                            <div class="slip-row"><span class="slip-bold">&nbsp;&nbsp;&nbsp;c) Pay Fixed on Promotion w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')} (${fitted.cell})</span></div>
+                            <div class="slip-row"><span class="slip-bold">&nbsp;&nbsp;&nbsp;c) Pay Fixed on ${evType === 'promo' ? 'Promotion' : 'Higher Scale'} w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')} (${fitted.cell})</span></div>
                         </div>`;
                     promoDetail = {
-                        evType: 'promo', date: new Date(ev.date), asOnDate,
+                        evType, date: new Date(ev.date), asOnDate,
                         oldLevel, oldGp, existingBasic, existingCellLabel,
                         oneStepValue, oneStepAdded: oneStepValue - existingBasic,
                         targetLevel, targetGp: ev.targetGp,
@@ -1651,11 +1670,11 @@
                     slipBlockHTML = `
                         <div class="slip-box">
                             <div class="slip-row"><span class="slip-bold">1. Existing Pay Matrix Cell on ${formatDate(ev.date)}</span><span>Rs. ${existingBasic.toLocaleString('en-IN')} (L-${oldLevel}, GP ${oldGp.toLocaleString('en-IN')})</span></div>
-                            <div class="slip-row"><span>2. Fitted directly into Target Level ${targetLevel} (equal/next-higher cell - No promo increment)</span><span>&mdash;</span></div>
+                            <div class="slip-row"><span>2. Fitted directly into Target Level ${targetLevel} (equal/next-higher cell - No increment)</span><span>&mdash;</span></div>
                             <div class="slip-row"><span class="slip-bold">3. Pay Fixed w.e.f ${formatDate(ev.date)}</span><span class="slip-bold">Rs. ${runningBasicPay.toLocaleString('en-IN')} (${fitted.cell})</span></div>
                         </div>`;
                     promoDetail = {
-                        evType: 'highscale', date: new Date(ev.date), asOnDate,
+                        evType, date: new Date(ev.date), asOnDate,
                         oldLevel, oldGp, existingBasic, existingCellLabel,
                         oneStepValue: null, oneStepAdded: 0,
                         targetLevel, targetGp: ev.targetGp,
@@ -2772,7 +2791,7 @@ function casGenerateHmAhmForm() {
         if (rows[i].label === 'INCREMENT') { dniRow = rows[i]; break; }
     }
     const dniLabel = dniRow ? formatDate(dniRow.date) : `1st July, ${pd.date.getFullYear() + 1}`;
-    const withIncr = pd.evType === 'promo';
+    const withIncr = pd.oneStepAdded > 0;
 
     const html = `
         <h2 style="text-align:center;text-decoration:underline;margin-bottom:6px;">(FORM FOR FIXATION OF PAY FOR HM / AHM AS PER ROPA'19)</h2>
@@ -2783,7 +2802,7 @@ function casGenerateHmAhmForm() {
             <tr><td class="hn">3</td><td>Designation of the Employee : <strong>${oldDesignation}</strong></td></tr>
             <tr><td class="hn">4</td><td>Status (Substantive/Officiating) : <strong>${empStatus}</strong></td></tr>
             <tr><td class="hn">5</td><td>Existing Basic Pay as per ROPA'19 Rs. <strong>${pd.existingBasic.toLocaleString('en-IN')}</strong> (Level <strong>${pd.oldLevel}</strong>, Cell <strong>${pd.existingCellLabel}</strong>) in the pay matrix as on <strong>${formatDate(pd.asOnDate)}</strong> (Date, preceding the date of joining as HM/AHM)</td></tr>
-            <tr><td class="hn">5.a</td><td>Add: One increment in the same pay level (<strong>if applicable</strong>) : Rs. ${withIncr ? '<strong>' + pd.oneStepAdded.toLocaleString('en-IN') + '</strong>' : '<em>N.A. &mdash; Higher Scale/Upgradation, direct fitment, no promotional increment</em>'}</td></tr>
+            <tr><td class="hn">5.a</td><td>Add: One increment in the same pay level (<strong>if applicable</strong>) : Rs. ${withIncr ? '<strong>' + pd.oneStepAdded.toLocaleString('en-IN') + '</strong>' : '<em>N.A. &mdash; ' + (pd.targetLevel === 16 ? 'Date of joining as HM/AHM does not fall between 2nd January and 30th June' : 'Higher Scale/Upgradation, direct fitment') + ', no increment added</em>'}</td></tr>
             <tr><td class="hn">5.b</td><td>Amount arrived at : Rs. <strong>${(withIncr ? pd.oneStepValue : pd.existingBasic).toLocaleString('en-IN')}</strong></td></tr>
             <tr><td class="hn">6</td><td>Basic Pay fixed at Rs. <strong>${pd.fittedValue.toLocaleString('en-IN')}</strong> in the pay matrix, Level <strong>${pd.targetLevel}</strong>, Cell <strong>${pd.fittedCell}</strong> on <strong>${formatDate(pd.date)}</strong> (date of joining as HM/AHM)</td></tr>
             <tr><td class="hn">7</td><td>Date of next Annual increment : <strong>${dniLabel}</strong></td></tr>
