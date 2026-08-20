@@ -2993,7 +2993,7 @@ function casPrintHmAhmForm() {
     casPrintWindowShell(`<div class="cas-doc-page cas-hmahm-form">${window._casHmAhmDoc.body}</div>`, window._casHmAhmDoc.title, false, true);
 }
 
-function generateCasDocuments(type) {
+window.generateCasDocuments = function generateCasDocuments(type) {
     const statusEl = document.getElementById('casDocStatus');
     const previewEl = document.getElementById('casDocPreview');
     statusEl.style.color = '#b91c1c';
@@ -3755,4 +3755,80 @@ function casPrintWindowShell(innerHtml, title, landscape = false, compact = fals
     const w = window.open('', '_blank');
     w.document.write(`<!DOCTYPE html><html><head><title>${title}</title><meta charset="utf-8">
         <style>
-            @page { size: A4 ${landscape ? 'landsca
+            @page { size: A4 ${landscape ? 'landscape' : 'portrait'}; margin: ${compact ? '6mm 7mm' : (landscape ? '10mm 8mm' : '18mm 16mm')}; }
+            body { font-family: 'Times New Roman', Times, serif; font-size: ${compact ? '13.5pt' : '12.5pt'}; color:#000; line-height:${compact ? '1.55' : '1.5'}; }
+            .cas-doc-page { page-break-after: always; padding-bottom: 8mm; }
+            .cas-doc-page:last-child { page-break-after: auto; }
+            .cas-doc-page:has(.cas-di-office-memo) { page-break-after: always; }
+            .cas-doc-page:has(.cas-file-cover) { padding-bottom: 0; }
+            .cas-doc-page.cas-compact { padding-bottom: 0; page-break-inside: avoid; }
+            .cas-letterhead-space { height: 54mm; }
+            .cas-di-office-memo { min-height: 230mm; box-sizing: border-box; font-size: 14pt; line-height: 1.5; padding: 3mm 5mm; }
+            .cas-di-office-memo .di-title { font-size: 19pt !important; }
+            .cas-di-office-memo .di-office { font-size: 16pt !important; }
+            .cas-di-office-memo .di-memo { font-size: 17pt !important; letter-spacing: .4px; }
+            .cas-file-cover { width:100%; min-height:255mm; box-sizing:border-box; border:5px double #111827; outline:1px solid #64748b; outline-offset:-10px; padding:18mm 16mm; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; page-break-inside:avoid; overflow:hidden; }
+            .cas-file-cover .cover-top,.cas-file-cover .cover-middle,.cas-file-cover .cover-bottom { width:100%; box-sizing:border-box; text-align:center; }
+            .cas-file-cover .cover-top { margin-bottom:18mm; }
+            .cas-file-cover .cover-middle { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5mm; width:100%; }
+            .cas-file-cover .cover-school { display:block; max-width:100%; font-size:24pt !important; line-height:1.2; font-weight:900; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-address { max-width:100%; font-size:13pt !important; line-height:1.25; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-title { display:block; width:100%; max-width:190mm; font-size:30pt !important; line-height:1.18; font-weight:900; letter-spacing:1px; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-effective { font-size:18pt !important; font-weight:800; }
+            .cas-file-cover .cover-favour { font-size:17pt !important; font-weight:800; letter-spacing:2px; margin-top:3mm; }
+            .cas-file-cover .cover-name { display:block; width:100%; max-width:190mm; font-size:32pt !important; line-height:1.15; font-weight:900; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-designation { display:block; width:100%; max-width:190mm; font-size:20pt !important; line-height:1.2; font-weight:900; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-meta { font-size:15pt !important; line-height:1.25; }
+            .cas-merged-pair { page-break-inside: avoid; }
+            .cas-merged-divider { margin: 12mm 0; border-top: 1px dashed #94a3b8; padding-top: 8mm; }
+            p { margin: 6px 0; }
+            table { border-collapse: collapse; }
+            .hmahm-table { width:100%; border-collapse:collapse; margin-top:8px; font-size:1em; }
+            .hmahm-table td { border:1.4px solid #000; padding:7px 9px; vertical-align:top; }
+            .hmahm-table td.hn { width:6%; font-weight:bold; text-align:center; }
+            .hmahm-office-table { width:100%; border-collapse:collapse; margin-top:6px; font-size:1em; }
+            .hmahm-office-table td { border:1.4px solid #000; padding:10px 12px; }
+            .hmahm-stampspace { height:70px; }
+            .cas-hmahm-form h2 { font-size:1.15em; margin-bottom:8px; }
+            .cas-hmahm-form h3 { font-size:1.05em; }
+            .cas-pay-structure { width:100%; font-family:'Times New Roman', Times, serif; color:#000; }
+            .cas-pay-structure .ps-title { text-align:center; font-size:15pt; font-weight:900; line-height:1.2; }
+            .cas-pay-structure .ps-school { text-align:center; font-size:11pt; font-weight:800; margin-top:3px; }
+            .cas-pay-structure .ps-cutoff { text-align:right; font-size:8pt; font-weight:700; margin:4px 0; }
+            .cas-pay-structure .ps-table { width:100%; table-layout:fixed; font-size:8pt; }
+            .cas-pay-structure .ps-table th,.cas-pay-structure .ps-table td { border:1px solid #000; padding:2.5px 3px; vertical-align:middle; }
+            .cas-pay-structure .ps-table th { font-weight:900; text-align:center; }
+            .cas-pay-structure .ps-table td:nth-child(1) { width:10%; font-weight:700; }
+            .cas-pay-structure .ps-table td:nth-child(2) { width:27%; }
+            .cas-pay-structure .ps-table td:nth-child(3) { width:9%; text-align:center; }
+            .cas-pay-structure .ps-table td:nth-child(4) { width:7%; text-align:center; }
+            .cas-pay-structure .ps-table td:nth-child(5) { width:10%; text-align:right; font-weight:700; }
+            .cas-pay-structure .ps-table td:nth-child(6) { width:27%; }
+            .cas-pay-structure .ps-table td:nth-child(7) { width:10%; text-align:center; font-weight:700; }
+        </style></head><body>${innerHtml}</body></html>`);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 300);
+}
+
+function casPrintOne(i) {
+    const d = window._casDocs && window._casDocs[i];
+    if (!d) return;
+    casPrintWindowShell(`<div class="cas-doc-page${d.compact ? ' cas-compact' : ''}">${d.body}</div>`, d.title, !!d.landscape, !!d.compact);
+}
+
+function casPrintAll() {
+    const docs = window._casDocs || [];
+    if (!docs.length) return;
+    // Mixed-compact batches: any landscape doc forces a separate popup per print job,
+    // so batch-print uses each doc's own compact styling but a shared portrait shell.
+    const anyCompact = docs.some(d => d.compact);
+    casPrintWindowShell(docs.map(d => `<div class="cas-doc-page${d.compact ? ' cas-compact' : ''}">${d.body}</div>`).join(''), 'CAS Documents', false, false);
+}
+
+// Start one-way auto-save only after the user has explicitly saved/loaded data once.
+armDashboardAutoSave();
+</script>
+
+<script>document.addEventListener('DOMContentLoaded', casInitDefaultStaffData);</script>
+</body>
+</html>
