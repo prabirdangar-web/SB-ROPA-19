@@ -210,22 +210,92 @@
             .cas-di-office-memo .di-office { font-size: 16pt !important; }
             .cas-di-office-memo .di-memo { font-size: 17pt !important; letter-spacing: .4px; }
             .cas-file-cover {
-                height: 128mm;
+                width: 100%;
+                min-height: 255mm;
                 box-sizing: border-box;
                 border: 5px double #111827;
                 outline: 1px solid #64748b;
                 outline-offset: -10px;
-                padding: 14mm 12mm;
+                padding: 18mm 16mm;
                 display: flex;
                 flex-direction: column;
-                justify-content: space-between;
+                justify-content: center;
+                align-items: center;
                 text-align: center;
                 page-break-inside: avoid;
+                overflow: hidden;
             }
-            .cas-file-cover .cover-school { font-size: 24pt !important; font-weight: 900; }
-            .cas-file-cover .cover-title { font-size: 32pt !important; font-weight: 900; letter-spacing: 1.2px; }
-            .cas-file-cover .cover-name { font-size: 29pt !important; font-weight: 900; }
-            .cas-file-cover .cover-meta { font-size: 16pt !important; }
+            .cas-file-cover .cover-top,
+            .cas-file-cover .cover-middle,
+            .cas-file-cover .cover-bottom {
+                width: 100%;
+                box-sizing: border-box;
+                text-align: center;
+            }
+            .cas-file-cover .cover-top { margin-bottom: 18mm; }
+            .cas-file-cover .cover-middle {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 5mm;
+                width: 100%;
+            }
+            .cas-file-cover .cover-school {
+                display:block;
+                max-width:100%;
+                font-size: 24pt !important;
+                line-height:1.2;
+                font-weight: 900;
+                overflow-wrap:anywhere;
+                word-break:normal;
+            }
+            .cas-file-cover .cover-address {
+                max-width:100%;
+                font-size: 13pt !important;
+                line-height:1.25;
+                overflow-wrap:anywhere;
+            }
+            .cas-file-cover .cover-title {
+                display:block;
+                width:100%;
+                max-width:190mm;
+                font-size: 30pt !important;
+                line-height:1.18;
+                font-weight: 900;
+                letter-spacing: 1px;
+                overflow-wrap:anywhere;
+            }
+            .cas-file-cover .cover-effective {
+                font-size: 18pt !important;
+                font-weight: 800;
+            }
+            .cas-file-cover .cover-favour {
+                font-size: 17pt !important;
+                font-weight: 800;
+                letter-spacing: 2px;
+                margin-top: 3mm;
+            }
+            .cas-file-cover .cover-name {
+                display:block;
+                width:100%;
+                max-width:190mm;
+                font-size: 32pt !important;
+                line-height:1.15;
+                font-weight: 900;
+                overflow-wrap:anywhere;
+                word-break:normal;
+            }
+            .cas-file-cover .cover-designation {
+                display:block;
+                width:100%;
+                max-width:190mm;
+                font-size: 20pt !important;
+                line-height:1.2;
+                font-weight: 900;
+                overflow-wrap:anywhere;
+            }
+            .cas-file-cover .cover-meta { font-size: 15pt !important; line-height:1.25; }
             .cas-letterhead-space { height: 54mm; }
             .cas-merged-divider { margin: 12mm 0; border-top: 1px dashed #94a3b8; padding-top: 8mm; }
 
@@ -3274,22 +3344,23 @@ function generateCasDocuments(type) {
     /* ---------- DOC 10: FILE COVER SHEET ---------- */
     const doc10 = `
         <div class="cas-file-cover">
-            <div class="cover-meta">
-                ${contactNo ? 'Contact No. ' + contactNo + '<br>' : ''}
-                ${email ? 'e-mail ID: ' + email + '<br>' : ''}
+            <div class="cover-top">
+                ${contactNo ? '<div class="cover-meta">Contact No. ' + contactNo + '</div>' : ''}
+                ${email ? '<div class="cover-meta">e-mail ID: ' + email + '</div>' : ''}
                 <div class="cover-school">${schoolName}</div>
-                <div>${schoolAddr}</div>
-                ${subDivision ? '<div>SUB DIVISION: ' + subDivision + '</div>' : ''}
+                <div class="cover-address">${schoolAddr}</div>
+                ${subDivision ? '<div class="cover-meta">SUB DIVISION: ' + subDivision + '</div>' : ''}
             </div>
+
+            <div class="cover-middle">
                 <div class="cover-title">APPROVAL FOR ${milestoneWord} FIXATION BENEFIT</div>
-                <div class="cover-meta" style="font-weight:800;margin-top:8px;">w.e.f. :: ${casFmt(effectDate)}</div>
+                <div class="cover-effective">w.e.f. :: ${casFmt(effectDate)}</div>
+                <div class="cover-favour">IN FAVOUR OF</div>
+                <div class="cover-name">${staffName}</div>
+                <div class="cover-designation">DESIGNATION: ${designation}</div>
             </div>
-            <div>
-                <div class="cover-meta" style="font-weight:800;letter-spacing:1px;">IN FAVOUR OF</div>
-                <div class="cover-name" style="margin:6px 0;">${staffName}</div>
-                <div class="cover-meta" style="font-weight:800;">DESIGNATION: ${designation}</div>
-                
-            </div>
+
+            <div class="cover-bottom"></div>
         </div>`;
 
     /* ---------- DOC 11: CERTIFICATE REGARDING STATUS OF SCHOOL ADMINISTRATION ---------- */
@@ -3560,11 +3631,18 @@ function casPrintWindowShell(innerHtml, title, landscape = false, compact = fals
             .cas-di-office-memo .di-title { font-size: 19pt !important; }
             .cas-di-office-memo .di-office { font-size: 16pt !important; }
             .cas-di-office-memo .di-memo { font-size: 17pt !important; letter-spacing: .4px; }
-            .cas-file-cover { height: 128mm; box-sizing: border-box; border: 5px double #111827; outline: 1px solid #64748b; outline-offset: -10px; padding: 14mm 12mm; display: flex; flex-direction: column; justify-content: space-between; text-align: center; page-break-inside: avoid; }
-            .cas-file-cover .cover-school { font-size: 24pt !important; font-weight: 900; }
-            .cas-file-cover .cover-title { font-size: 32pt !important; font-weight: 900; letter-spacing: 1.2px; }
-            .cas-file-cover .cover-name { font-size: 29pt !important; font-weight: 900; }
-            .cas-file-cover .cover-meta { font-size: 16pt !important; }
+            .cas-file-cover { width:100%; min-height:255mm; box-sizing:border-box; border:5px double #111827; outline:1px solid #64748b; outline-offset:-10px; padding:18mm 16mm; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; page-break-inside:avoid; overflow:hidden; }
+            .cas-file-cover .cover-top,.cas-file-cover .cover-middle,.cas-file-cover .cover-bottom { width:100%; box-sizing:border-box; text-align:center; }
+            .cas-file-cover .cover-top { margin-bottom:18mm; }
+            .cas-file-cover .cover-middle { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5mm; width:100%; }
+            .cas-file-cover .cover-school { display:block; max-width:100%; font-size:24pt !important; line-height:1.2; font-weight:900; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-address { max-width:100%; font-size:13pt !important; line-height:1.25; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-title { display:block; width:100%; max-width:190mm; font-size:30pt !important; line-height:1.18; font-weight:900; letter-spacing:1px; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-effective { font-size:18pt !important; font-weight:800; }
+            .cas-file-cover .cover-favour { font-size:17pt !important; font-weight:800; letter-spacing:2px; margin-top:3mm; }
+            .cas-file-cover .cover-name { display:block; width:100%; max-width:190mm; font-size:32pt !important; line-height:1.15; font-weight:900; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-designation { display:block; width:100%; max-width:190mm; font-size:20pt !important; line-height:1.2; font-weight:900; overflow-wrap:anywhere; }
+            .cas-file-cover .cover-meta { font-size:15pt !important; line-height:1.25; }
             .cas-merged-pair { page-break-inside: avoid; }
             .cas-merged-divider { margin: 12mm 0; border-top: 1px dashed #94a3b8; padding-top: 8mm; }
             p { margin: 6px 0; }
