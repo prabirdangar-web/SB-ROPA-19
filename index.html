@@ -796,16 +796,29 @@
     </div>
 
     <div class="panel" id="dataSavePanel" style="background:#ecfdf5;border:2px solid #10b981;">
-        <div style="font-weight:800;font-size:1rem;color:#065f46;margin-bottom:8px;">Save / Import / Export Dashboard Data</div>
-        <div style="font-size:.8rem;color:#334155;margin-bottom:10px;">Save the complete dashboard data in this browser. After saving once, you can export the same data as a JSON file and import it later on another browser/computer.</div>
+        <div style="font-weight:800;font-size:1rem;color:#065f46;margin-bottom:8px;">Teacher-wise Data Save / Load</div>
+        <div style="font-size:.8rem;color:#334155;margin-bottom:10px;">Each teacher is saved as a separate record in this browser. Saving one teacher will NOT overwrite another teacher's data. The teacher name is used as the unique record name.</div>
+        <div class="grid-inputs" style="margin-bottom:8px;">
+            <div class="form-group">
+                <label>Saved Teacher</label>
+                <select id="savedTeacherSelect" onchange="loadTeacherRecordBySelect()">
+                    <option value="">-- Select Saved Teacher --</option>
+                </select>
+            </div>
+            <div class="form-group" style="display:flex;align-items:end;gap:6px;flex-wrap:wrap;">
+                <button type="button" class="btn-print" onclick="saveTeacherRecord()">💾 Save Teacher</button>
+                <button type="button" class="btn-add" onclick="loadTeacherRecord()">↻ Load Teacher</button>
+                <button type="button" class="btn-add" style="background:#b91c1c;" onclick="deleteTeacherRecord()">🗑 Delete Teacher</button>
+                <button type="button" class="btn-add" style="background:#475569;" onclick="newTeacherRecord()">＋ New Teacher</button>
+            </div>
+        </div>
         <div class="btn-row" style="margin-top:0;">
-            <button type="button" class="btn-print" onclick="saveDashboardData()">💾 Save Data</button>
-            <button type="button" class="btn-add" onclick="loadSavedDashboardData()">↻ Load Saved Data</button>
-            <button type="button" class="btn-add" style="background:#7c3aed;" onclick="exportDashboardJSON()">⇩ Export JSON</button>
+            <button type="button" class="btn-add" style="background:#7c3aed;" onclick="exportDashboardJSON()">⇩ Export Current JSON</button>
             <button type="button" class="btn-add" style="background:#475569;" onclick="document.getElementById('dashboardJsonImport').click()">⇧ Import JSON</button>
             <input type="file" id="dashboardJsonImport" accept="application/json,.json" style="display:none;" onchange="importDashboardJSON(event)">
         </div>
         <div id="dataSaveStatus" style="margin-top:8px;font-size:.8rem;font-weight:700;color:#065f46;"></div>
+        <div id="teacherRecordCount" style="margin-top:4px;font-size:.75rem;color:#475569;"></div>
     </div>
 
     <h4 style="margin-top:16px;">Prior School Service History (add every school served before the current one — supports 3 or more)</h4>
@@ -3473,14 +3486,15 @@ function generateCasDocuments(type) {
     `;
 }
 
-/* ---------- DASHBOARD SAVE / LOAD / JSON IMPORT / EXPORT ---------- */
+/* ---------- TEACHER-WISE SAVE / LOAD / JSON IMPORT / EXPORT ---------- */
 const DASHBOARD_STORAGE_KEY = 'TFHS_ROPA_PAY_FIXATION_DASHBOARD_V3';
+const TEACHER_RECORDS_STORAGE_KEY = 'TFHS_ROPA_TEACHER_RECORDS_V1';
 let dashboardSaveArmed = false;
 
 function dashboardFieldState() {
     const state = {};
     document.querySelectorAll('input[id], select[id], textarea[id]').forEach(el => {
-        if (el.id === 'dashboardJsonImport') return;
+        if (el.id === 'dashboardJsonImport' || el.id === 'savedTeacherSelect') return;
         state[el.id] = el.type === 'checkbox' ? el.checked : el.value;
     });
     return state;
@@ -3488,8 +3502,9 @@ function dashboardFieldState() {
 
 function collectDashboardState() {
     return {
-        version: 3,
+        version: 4,
         savedAt: new Date().toISOString(),
+        staffName: (document.getElementById('staffName')?.value || '').trim(),
         fields: dashboardFieldState(),
         periods: JSON.parse(JSON.stringify(periods || [])),
         masterMlEntries: JSON.parse(JSON.stringify(masterMlEntries || [])),
@@ -3502,12 +3517,41 @@ function collectDashboardState() {
     };
 }
 
+function teacherRecordKey(name) {
+    return String(name || '').trim().replace(/\s+/g, ' ').toUpperCase();
+}
+
+function getTeacherRecords() {
+    try {
+        const raw = localStorage.getItem(TEACHER_RECORDS_STORAGE_KEY);
+        if (!raw) return {};
+        const data = JSON.parse(raw);
+        return (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+    } catch (_) { return {}; }
+}
+
+function setTeacherRecords(records) {
+    localStorage.setItem(TEACHER_RECORDS_STORAGE_KEY, JSON.stringify(records));
+}
+
+function refreshTeacherRecordList(selectKey = '') {
+    const sel = document.getElementById('savedTeacherSelect');
+    const count = document.getElementById('teacherRecordCount');
+    if (!sel) return;
+    const records = getTeacherRecords();
+    const names = Object.keys(records).sort((a,b) => a.localeCompare(b, 'en'));
+    sel.innerHTML = '<option value="">-- Select Saved Teacher --</option>' +
+        names.map(k => `<option value="${k.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}">${(records[k].staffName || k).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}</option>`).join('');
+    if (selectKey && records[selectKey]) sel.value = selectKey;
+    if (count) count.textContent = `${names.length} teacher record${names.length === 1 ? '' : 's'} saved in this browser.`;
+}
+
 function applyDashboardState(data) {
     if (!data || typeof data !== 'object') throw new Error('Invalid dashboard JSON.');
     const fields = data.fields || {};
     Object.keys(fields).forEach(id => {
         const el = document.getElementById(id);
-        if (!el || id === 'dashboardJsonImport') return;
+        if (!el || id === 'dashboardJsonImport' || id === 'savedTeacherSelect') return;
         if (el.type === 'checkbox') el.checked = !!fields[id];
         else el.value = fields[id] ?? '';
     });
@@ -3534,56 +3578,141 @@ function applyDashboardState(data) {
     assignMlEntries();
     renderAll();
     const status = document.getElementById('dataSaveStatus');
-    if (status) status.textContent = 'Dashboard data loaded successfully.';
+    if (status) status.textContent = '✓ Teacher data loaded successfully.';
 }
 
-function saveDashboardData(showMessage = true) {
+function saveTeacherRecord(showMessage = true) {
     try {
         const data = collectDashboardState();
+        const key = teacherRecordKey(data.staffName);
+        if (!key) {
+            const status = document.getElementById('dataSaveStatus');
+            if (status) { status.style.color = '#b91c1c'; status.textContent = 'Enter Teacher Name before saving.'; }
+            return null;
+        }
+        const records = getTeacherRecords();
+        const existed = !!records[key];
+        records[key] = data;
+        setTeacherRecords(records);
         localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(data));
         dashboardSaveArmed = true;
+        refreshTeacherRecordList(key);
         if (showMessage) {
             const status = document.getElementById('dataSaveStatus');
-            if (status) status.textContent = '✓ Data saved in this browser at ' + new Date().toLocaleString('en-IN');
+            if (status) {
+                status.style.color = '#065f46';
+                status.textContent = `✓ ${existed ? 'Updated' : 'Saved'} teacher: ${data.staffName}`;
+            }
         }
         return data;
     } catch (err) {
         const status = document.getElementById('dataSaveStatus');
-        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Save failed: ' + err.message; }
+        if (status) { status.style.color = '#b91b1b'; status.textContent = 'Save failed: ' + err.message; }
         return null;
     }
 }
 
-function loadSavedDashboardData() {
+function loadTeacherRecord() {
+    const sel = document.getElementById('savedTeacherSelect');
+    const key = sel ? sel.value : '';
+    if (!key) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) status.textContent = 'Select a saved teacher first.';
+        return;
+    }
+    loadTeacherRecordByKey(key);
+}
+
+function loadTeacherRecordBySelect() {
+    const sel = document.getElementById('savedTeacherSelect');
+    if (sel && sel.value) loadTeacherRecordByKey(sel.value);
+}
+
+function loadTeacherRecordByKey(key) {
     try {
-        const raw = localStorage.getItem(DASHBOARD_STORAGE_KEY);
-        if (!raw) {
-            const status = document.getElementById('dataSaveStatus');
-            if (status) status.textContent = 'No saved dashboard data found in this browser.';
-            return;
-        }
-        applyDashboardState(JSON.parse(raw));
+        const records = getTeacherRecords();
+        if (!records[key]) throw new Error('Teacher record not found.');
+        applyDashboardState(records[key]);
         dashboardSaveArmed = true;
+        refreshTeacherRecordList(key);
     } catch (err) {
         const status = document.getElementById('dataSaveStatus');
         if (status) { status.style.color = '#b91c1c'; status.textContent = 'Load failed: ' + err.message; }
     }
 }
 
+function deleteTeacherRecord() {
+    const sel = document.getElementById('savedTeacherSelect');
+    const key = sel ? sel.value : '';
+    if (!key) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) status.textContent = 'Select a saved teacher first.';
+        return;
+    }
+    const records = getTeacherRecords();
+    const displayName = records[key]?.staffName || key;
+    if (!confirm(`Delete saved data for ${displayName}?`)) return;
+    delete records[key];
+    setTeacherRecords(records);
+    refreshTeacherRecordList();
+    const status = document.getElementById('dataSaveStatus');
+    if (status) { status.style.color = '#065f46'; status.textContent = `✓ Deleted teacher: ${displayName}`; }
+}
+
+function newTeacherRecord() {
+    if (!confirm('Clear the current form to enter a new teacher? Saved teacher records will remain safe.')) return;
+    document.querySelectorAll('input[id], select[id], textarea[id]').forEach(el => {
+        if (['dashboardJsonImport','savedTeacherSelect'].includes(el.id)) return;
+        if (el.type === 'checkbox') el.checked = false;
+        else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+        else el.value = '';
+    });
+    periods = [];
+    masterMlEntries = [];
+    transferEvents = [];
+    idCounter = 1;
+    const ps = document.getElementById('casPriorSchoolsList');
+    if (ps) ps.innerHTML = '';
+    casPriorSchoolSeq = 0;
+    togglePromotionSection();
+    toggleRopa09Section();
+    casToggleGovFields();
+    toggleTransferUI();
+    calculateDOR();
+    assignMlEntries();
+    renderAll();
+    const status = document.getElementById('dataSaveStatus');
+    if (status) { status.style.color = '#065f46'; status.textContent = '✓ New teacher form ready. Existing saved records are unchanged.'; }
+    const sel = document.getElementById('savedTeacherSelect');
+    if (sel) sel.value = '';
+}
+
+/* Backward-compatible buttons/functions */
+function saveDashboardData(showMessage = true) { return saveTeacherRecord(showMessage); }
+
+function loadSavedDashboardData() {
+    refreshTeacherRecordList();
+    const sel = document.getElementById('savedTeacherSelect');
+    if (sel && sel.value) return loadTeacherRecord();
+    try {
+        const raw = localStorage.getItem(DASHBOARD_STORAGE_KEY);
+        if (raw) { applyDashboardState(JSON.parse(raw)); dashboardSaveArmed = true; return; }
+    } catch (_) {}
+    const status = document.getElementById('dataSaveStatus');
+    if (status) status.textContent = 'Select a saved teacher to load.';
+}
+
 function exportDashboardJSON() {
-    const data = saveDashboardData(false) || collectDashboardState();
+    const data = collectDashboardState();
     const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const safeName = (document.getElementById('staffName').value || 'Staff').replace(/[^a-z0-9_-]+/gi, '_');
     a.href = url;
     a.download = `TFHS_ROPA_${safeName}_${new Date().toISOString().slice(0,10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     const status = document.getElementById('dataSaveStatus');
-    if (status) status.textContent = '✓ JSON exported successfully.';
+    if (status) status.textContent = '✓ Current teacher JSON exported successfully.';
 }
 
 function importDashboardJSON(event) {
@@ -3594,16 +3723,21 @@ function importDashboardJSON(event) {
         try {
             const data = JSON.parse(e.target.result);
             applyDashboardState(data);
-            localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(collectDashboardState()));
+            const key = teacherRecordKey(data.staffName || data.fields?.staffName || document.getElementById('staffName')?.value);
+            if (key) {
+                const records = getTeacherRecords();
+                records[key] = data;
+                setTeacherRecords(records);
+                refreshTeacherRecordList(key);
+            }
+            localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(data));
             dashboardSaveArmed = true;
             const status = document.getElementById('dataSaveStatus');
-            if (status) status.textContent = '✓ JSON imported, applied and saved to this browser.';
+            if (status) status.textContent = `✓ JSON imported and saved as teacher: ${data.staffName || key}`;
         } catch (err) {
             const status = document.getElementById('dataSaveStatus');
             if (status) { status.style.color = '#b91c1c'; status.textContent = 'Import failed: ' + err.message; }
-        } finally {
-            event.target.value = '';
-        }
+        } finally { event.target.value = ''; }
     };
     reader.readAsText(file);
 }
@@ -3611,88 +3745,14 @@ function importDashboardJSON(event) {
 function armDashboardAutoSave() {
     document.addEventListener('change', function(e) {
         if (!dashboardSaveArmed) return;
-        if (e.target && e.target.id !== 'dashboardJsonImport') saveDashboardData(false);
+        if (e.target && !['dashboardJsonImport','savedTeacherSelect'].includes(e.target.id)) saveTeacherRecord(false);
     });
 }
+
+refreshTeacherRecordList();
 
 function casPrintWindowShell(innerHtml, title, landscape = false, compact = false) {
     const w = window.open('', '_blank');
     w.document.write(`<!DOCTYPE html><html><head><title>${title}</title><meta charset="utf-8">
         <style>
-            @page { size: A4 ${landscape ? 'landscape' : 'portrait'}; margin: ${compact ? '6mm 7mm' : (landscape ? '10mm 8mm' : '18mm 16mm')}; }
-            body { font-family: 'Times New Roman', Times, serif; font-size: ${compact ? '13.5pt' : '12.5pt'}; color:#000; line-height:${compact ? '1.55' : '1.5'}; }
-            .cas-doc-page { page-break-after: always; padding-bottom: 8mm; }
-            .cas-doc-page:last-child { page-break-after: auto; }
-            .cas-doc-page:has(.cas-di-office-memo) { page-break-after: always; }
-            .cas-doc-page:has(.cas-file-cover) { padding-bottom: 0; }
-            .cas-doc-page.cas-compact { padding-bottom: 0; page-break-inside: avoid; }
-            .cas-letterhead-space { height: 54mm; }
-            .cas-di-office-memo { min-height: 230mm; box-sizing: border-box; font-size: 14pt; line-height: 1.5; padding: 3mm 5mm; }
-            .cas-di-office-memo .di-title { font-size: 19pt !important; }
-            .cas-di-office-memo .di-office { font-size: 16pt !important; }
-            .cas-di-office-memo .di-memo { font-size: 17pt !important; letter-spacing: .4px; }
-            .cas-file-cover { width:100%; min-height:255mm; box-sizing:border-box; border:5px double #111827; outline:1px solid #64748b; outline-offset:-10px; padding:18mm 16mm; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; page-break-inside:avoid; overflow:hidden; }
-            .cas-file-cover .cover-top,.cas-file-cover .cover-middle,.cas-file-cover .cover-bottom { width:100%; box-sizing:border-box; text-align:center; }
-            .cas-file-cover .cover-top { margin-bottom:18mm; }
-            .cas-file-cover .cover-middle { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5mm; width:100%; }
-            .cas-file-cover .cover-school { display:block; max-width:100%; font-size:24pt !important; line-height:1.2; font-weight:900; overflow-wrap:anywhere; }
-            .cas-file-cover .cover-address { max-width:100%; font-size:13pt !important; line-height:1.25; overflow-wrap:anywhere; }
-            .cas-file-cover .cover-title { display:block; width:100%; max-width:190mm; font-size:30pt !important; line-height:1.18; font-weight:900; letter-spacing:1px; overflow-wrap:anywhere; }
-            .cas-file-cover .cover-effective { font-size:18pt !important; font-weight:800; }
-            .cas-file-cover .cover-favour { font-size:17pt !important; font-weight:800; letter-spacing:2px; margin-top:3mm; }
-            .cas-file-cover .cover-name { display:block; width:100%; max-width:190mm; font-size:32pt !important; line-height:1.15; font-weight:900; overflow-wrap:anywhere; }
-            .cas-file-cover .cover-designation { display:block; width:100%; max-width:190mm; font-size:20pt !important; line-height:1.2; font-weight:900; overflow-wrap:anywhere; }
-            .cas-file-cover .cover-meta { font-size:15pt !important; line-height:1.25; }
-            .cas-merged-pair { page-break-inside: avoid; }
-            .cas-merged-divider { margin: 12mm 0; border-top: 1px dashed #94a3b8; padding-top: 8mm; }
-            p { margin: 6px 0; }
-            table { border-collapse: collapse; }
-            .hmahm-table { width:100%; border-collapse:collapse; margin-top:8px; font-size:1em; }
-            .hmahm-table td { border:1.4px solid #000; padding:7px 9px; vertical-align:top; }
-            .hmahm-table td.hn { width:6%; font-weight:bold; text-align:center; }
-            .hmahm-office-table { width:100%; border-collapse:collapse; margin-top:6px; font-size:1em; }
-            .hmahm-office-table td { border:1.4px solid #000; padding:10px 12px; }
-            .hmahm-stampspace { height:70px; }
-            .cas-hmahm-form h2 { font-size:1.15em; margin-bottom:8px; }
-            .cas-hmahm-form h3 { font-size:1.05em; }
-            .cas-pay-structure { width:100%; font-family:'Times New Roman', Times, serif; color:#000; }
-            .cas-pay-structure .ps-title { text-align:center; font-size:15pt; font-weight:900; line-height:1.2; }
-            .cas-pay-structure .ps-school { text-align:center; font-size:11pt; font-weight:800; margin-top:3px; }
-            .cas-pay-structure .ps-cutoff { text-align:right; font-size:8pt; font-weight:700; margin:4px 0; }
-            .cas-pay-structure .ps-table { width:100%; table-layout:fixed; font-size:8pt; }
-            .cas-pay-structure .ps-table th,.cas-pay-structure .ps-table td { border:1px solid #000; padding:2.5px 3px; vertical-align:middle; }
-            .cas-pay-structure .ps-table th { font-weight:900; text-align:center; }
-            .cas-pay-structure .ps-table td:nth-child(1) { width:10%; font-weight:700; }
-            .cas-pay-structure .ps-table td:nth-child(2) { width:27%; }
-            .cas-pay-structure .ps-table td:nth-child(3) { width:9%; text-align:center; }
-            .cas-pay-structure .ps-table td:nth-child(4) { width:7%; text-align:center; }
-            .cas-pay-structure .ps-table td:nth-child(5) { width:10%; text-align:right; font-weight:700; }
-            .cas-pay-structure .ps-table td:nth-child(6) { width:27%; }
-            .cas-pay-structure .ps-table td:nth-child(7) { width:10%; text-align:center; font-weight:700; }
-        </style></head><body>${innerHtml}</body></html>`);
-    w.document.close();
-    setTimeout(() => { w.focus(); w.print(); }, 300);
-}
-
-function casPrintOne(i) {
-    const d = window._casDocs && window._casDocs[i];
-    if (!d) return;
-    casPrintWindowShell(`<div class="cas-doc-page${d.compact ? ' cas-compact' : ''}">${d.body}</div>`, d.title, !!d.landscape, !!d.compact);
-}
-
-function casPrintAll() {
-    const docs = window._casDocs || [];
-    if (!docs.length) return;
-    // Mixed-compact batches: any landscape doc forces a separate popup per print job,
-    // so batch-print uses each doc's own compact styling but a shared portrait shell.
-    const anyCompact = docs.some(d => d.compact);
-    casPrintWindowShell(docs.map(d => `<div class="cas-doc-page${d.compact ? ' cas-compact' : ''}">${d.body}</div>`).join(''), 'CAS Documents', false, false);
-}
-
-// Start one-way auto-save only after the user has explicitly saved/loaded data once.
-armDashboardAutoSave();
-</script>
-
-<script>document.addEventListener('DOMContentLoaded', casInitDefaultStaffData);</script>
-</body>
-</html>
+            @page { size: A4 ${landscape ? 'landsca
