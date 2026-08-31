@@ -406,6 +406,33 @@
         <a href="#tab-servicebook">Service Book</a>
     </nav>
 
+    <div class="panel" style="margin-top:10px;background:#f8fafc;border:1px solid #94a3b8;position:sticky;top:54px;z-index:900;">
+        <div style="font-weight:800;margin-bottom:7px;">Teacher List & Quick Actions</div>
+        <div style="display:flex;flex-wrap:wrap;align-items:end;gap:6px;margin-bottom:7px;">
+            <div style="min-width:280px;flex:1;">
+                <label style="display:block;font-size:.75rem;font-weight:700;margin-bottom:3px;">Saved Teacher List</label>
+                <select id="topSavedTeacherSelect" onchange="loadTeacherRecordByTopSelect()" style="width:100%;padding:7px;border:1px solid #94a3b8;border-radius:5px;background:#fff;">
+                    <option value="">-- Select Saved Teacher --</option>
+                </select>
+            </div>
+            <button type="button" class="btn-add" onclick="loadTeacherRecordFromTop()">↻ Load</button>
+            <button type="button" class="btn-add" style="background:#475569;" onclick="document.getElementById('dashboardJsonImport').click()">⇧ Upload Teacher</button>
+            <button type="button" class="btn-generate" onclick="generateCasDocuments('10')">Generate 10-Year</button>
+            <button type="button" class="btn-generate" onclick="generateCasDocuments('18')">Generate 18-Year</button>
+            <button type="button" class="btn-generate" onclick="generateCasDocuments('20')">Generate 20-Year</button>
+        </div>
+        <div id="topTeacherRecordCount" style="font-size:.73rem;color:#475569;margin-bottom:7px;"></div>
+        <div class="btn-row" style="margin:0;display:flex;flex-wrap:wrap;gap:6px;">
+            <button type="button" class="btn-add" onclick="newTeacherRecord()">＋ New Teacher</button>
+            <button type="button" class="btn-add" onclick="loadTeacherRecord()">↻ Load Teacher</button>
+            <button type="button" class="btn-print admin-only" onclick="saveTeacherRecord()">💾 Save Teacher</button>
+            <button type="button" class="btn-add" style="background:#7c3aed;" onclick="exportDashboardJSON()">⇩ Export Teacher JSON</button>
+            <button type="button" class="btn-add admin-only" style="background:#475569;" onclick="document.getElementById('dashboardJsonImport').click()">⇧ Upload / Import Teacher JSON</button>
+            <button type="button" class="btn-generate" onclick="generateCasDocuments('10')">Generate 10-Year</button>
+            <button type="button" class="btn-generate" onclick="generateCasDocuments('18')">Generate 18-Year</button>
+            <button type="button" class="btn-generate" onclick="generateCasDocuments('20')">Generate 20-Year</button>
+        </div>
+    </div>
 
     <h3 id="tab-staff">1. Staff & Service Details</h3>
     <div class="grid-inputs">
@@ -3673,17 +3700,35 @@ function setTeacherRecords(records) {
 }
 
 function refreshTeacherRecordList(selectKey = '') {
-    const sel = document.getElementById('savedTeacherSelect');
-    const count = document.getElementById('teacherRecordCount');
-    if (!sel) return;
+    const selects = [document.getElementById('savedTeacherSelect'), document.getElementById('topSavedTeacherSelect')].filter(Boolean);
+    const counts = [document.getElementById('teacherRecordCount'), document.getElementById('topTeacherRecordCount')].filter(Boolean);
+    if (!selects.length) return;
     const records = getTeacherRecords();
     const names = Object.keys(records).sort((a,b) => a.localeCompare(b, 'en'));
-    const prevValue = sel.value;
-    sel.innerHTML = '<option value="">-- Select Saved Teacher --</option>' +
-        names.map(k => `<option value="${k.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}">${(records[k].staffName || k).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}</option>`).join('');
-    if (selectKey && records[selectKey]) sel.value = selectKey;
-    else if (prevValue && records[prevValue]) sel.value = prevValue;
-    if (count) count.textContent = `${names.length} teacher record${names.length === 1 ? '' : 's'} saved in the shared cloud database.`;
+    selects.forEach(sel => {
+        const prevValue = sel.value;
+        sel.innerHTML = '<option value="">-- Select Saved Teacher --</option>' +
+            names.map(k => `<option value="${k.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}">${String(records[k].staffName || k).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}</option>`).join('');
+        if (selectKey && records[selectKey]) sel.value = selectKey;
+        else if (prevValue && records[prevValue]) sel.value = prevValue;
+    });
+    const text = `${names.length} teacher record${names.length === 1 ? '' : 's'} saved in the shared cloud database.`;
+    counts.forEach(el => el.textContent = text);
+}
+
+function loadTeacherRecordByTopSelect() {
+    const sel = document.getElementById('topSavedTeacherSelect');
+    if (sel && sel.value) loadTeacherRecordByKey(sel.value);
+}
+
+function loadTeacherRecordFromTop() {
+    const sel = document.getElementById('topSavedTeacherSelect');
+    if (!sel || !sel.value) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) status.textContent = 'Select a saved teacher first.';
+        return;
+    }
+    loadTeacherRecordByKey(sel.value);
 }
 
 function applyDashboardState(data) {
@@ -3962,19 +4007,6 @@ function casPrintWindowShell(innerHtml, title, landscape = false, compact = fals
             .cas-pay-structure .ps-table td:nth-child(6) { width:27%; }
             .cas-pay-structure .ps-table td:nth-child(7) { width:10%; text-align:center; font-weight:700; }
         </style></head><body>${innerHtml}
-<script>
-(function(){
-  const links=[...document.querySelectorAll('.top-tabs a')];
-  const sections=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
-  function setActive(){
-    let current=sections[0];
-    for(const sec of sections){ if(sec.getBoundingClientRect().top <= 100) current=sec; }
-    links.forEach(a=>a.classList.toggle('active', document.querySelector(a.getAttribute('href'))===current));
-  }
-  window.addEventListener('scroll',setActive,{passive:true});
-  setActive();
-})();
-</script>
 </body></html>`);
     w.document.close();
     setTimeout(() => { w.focus(); w.print(); }, 300);
