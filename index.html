@@ -334,6 +334,45 @@
 </head>
 <body>
 
+<div id="syncStatus" style="position:fixed;bottom:10px;right:10px;background:#0f172a;color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;z-index:999;box-shadow:0 2px 6px rgba(0,0,0,.2);" class="no-print">Connecting…</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCiqQFsnbSi6eCgUI_W3NTybzIkRmCI_54",
+    authDomain: "tfhs-portal.firebaseapp.com",
+    projectId: "tfhs-portal",
+    storageBucket: "tfhs-portal.firebasestorage.app",
+    messagingSenderId: "316041012204",
+    appId: "1:316041012204:web:c0b52bc796c5ac173716c9"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+  const ropaDocRef = db.collection('tfhs').doc('ropaPayFixation');
+</script>
+
+<!-- ADMIN LOGIN PANEL (view-only for everyone unless logged in) -->
+<div id="authPanel" class="no-print" style="position:fixed;top:10px;right:10px;z-index:999;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:10px 14px;box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12px;width:210px;">
+  <div id="authLoggedOut">
+    <div style="font-weight:700;margin-bottom:6px;">🔒 View Only Mode</div>
+    <input type="email" id="authEmail" placeholder="Admin email" style="width:100%;margin-bottom:5px;padding:5px;font-size:11px;border:1px solid #cbd5e1;border-radius:4px;">
+    <input type="password" id="authPass" placeholder="Password" style="width:100%;margin-bottom:5px;padding:5px;font-size:11px;border:1px solid #cbd5e1;border-radius:4px;" onkeydown="if(event.key==='Enter')adminLogin();">
+    <button class="btn-add" style="width:100%;padding:7px;font-size:11px;" onclick="adminLogin()">Login to Edit</button>
+    <div id="authError" style="color:#b91c1c;font-size:10.5px;margin-top:4px;"></div>
+  </div>
+  <div id="authLoggedIn" style="display:none;">
+    <div style="font-weight:700;margin-bottom:6px;color:#065f46;">✅ Admin Mode (editing enabled)</div>
+    <button class="btn-del" style="width:100%;padding:7px;font-size:11px;" onclick="adminLogout()">Logout</button>
+  </div>
+</div>
+<style>
+  .admin-only{display:none;}
+  body.is-admin .admin-only{display:inline-block;}
+</style>
+
 <div class="container">
     <h2>Unified ROPA Pay Fixation Matrix Dashboard</h2>
 
@@ -797,7 +836,7 @@
 
     <div class="panel" id="dataSavePanel" style="background:#ecfdf5;border:2px solid #10b981;">
         <div style="font-weight:800;font-size:1rem;color:#065f46;margin-bottom:8px;">Teacher-wise Data Save / Load</div>
-        <div style="font-size:.8rem;color:#334155;margin-bottom:10px;">Each teacher is saved as a separate record in this browser. Saving one teacher will NOT overwrite another teacher's data. The teacher name is used as the unique record name.</div>
+        <div style="font-size:.8rem;color:#334155;margin-bottom:10px;">Each teacher is saved as a separate record in the shared cloud database — visible on any device that opens this link. Saving one teacher will NOT overwrite another teacher's data. The teacher name is used as the unique record name. Only logged-in admins can save, delete, or import; anyone can view/load/export.</div>
         <div class="grid-inputs" style="margin-bottom:8px;">
             <div class="form-group">
                 <label>Saved Teacher</label>
@@ -806,15 +845,15 @@
                 </select>
             </div>
             <div class="form-group" style="display:flex;align-items:end;gap:6px;flex-wrap:wrap;">
-                <button type="button" class="btn-print" onclick="saveTeacherRecord()">💾 Save Teacher</button>
+                <button type="button" class="btn-print admin-only" onclick="saveTeacherRecord()">💾 Save Teacher</button>
                 <button type="button" class="btn-add" onclick="loadTeacherRecord()">↻ Load Teacher</button>
-                <button type="button" class="btn-add" style="background:#b91c1c;" onclick="deleteTeacherRecord()">🗑 Delete Teacher</button>
+                <button type="button" class="btn-add admin-only" style="background:#b91c1c;" onclick="deleteTeacherRecord()">🗑 Delete Teacher</button>
                 <button type="button" class="btn-add" style="background:#475569;" onclick="newTeacherRecord()">＋ New Teacher</button>
             </div>
         </div>
         <div class="btn-row" style="margin-top:0;">
             <button type="button" class="btn-add" style="background:#7c3aed;" onclick="exportDashboardJSON()">⇩ Export Current JSON</button>
-            <button type="button" class="btn-add" style="background:#475569;" onclick="document.getElementById('dashboardJsonImport').click()">⇧ Import JSON</button>
+            <button type="button" class="btn-add admin-only" style="background:#475569;" onclick="document.getElementById('dashboardJsonImport').click()">⇧ Import JSON</button>
             <input type="file" id="dashboardJsonImport" accept="application/json,.json" style="display:none;" onchange="importDashboardJSON(event)">
         </div>
         <div id="dataSaveStatus" style="margin-top:8px;font-size:.8rem;font-weight:700;color:#065f46;"></div>
@@ -3484,10 +3523,56 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     `;
 }
 
-/* ---------- TEACHER-WISE SAVE / LOAD / JSON IMPORT / EXPORT ---------- */
+/* ---------- TEACHER-WISE SAVE / LOAD / JSON IMPORT / EXPORT (Firestore cloud sync) ---------- */
 const DASHBOARD_STORAGE_KEY = 'TFHS_ROPA_PAY_FIXATION_DASHBOARD_V3';
-const TEACHER_RECORDS_STORAGE_KEY = 'TFHS_ROPA_TEACHER_RECORDS_V1';
+const TEACHER_RECORDS_STORAGE_KEY = 'TFHS_ROPA_TEACHER_RECORDS_V1'; // offline fallback cache only
 let dashboardSaveArmed = false;
+let isAdmin = false;
+let teacherRecordsCache = {}; // kept in sync with Firestore in real time
+
+function setSyncStatus(text, color){
+  const el = document.getElementById('syncStatus');
+  if(el){ el.textContent = text; el.style.background = color || '#0f172a'; }
+}
+
+/* ---- Admin login/logout (Firebase Authentication) ---- */
+auth.onAuthStateChanged((user)=>{
+  isAdmin = !!user;
+  document.body.classList.toggle('is-admin', isAdmin);
+  document.getElementById('authLoggedOut').style.display = isAdmin ? 'none' : '';
+  document.getElementById('authLoggedIn').style.display = isAdmin ? '' : 'none';
+});
+function adminLogin(){
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPass').value;
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  auth.signInWithEmailAndPassword(email, pass).catch((err)=>{
+    errEl.textContent = 'Login failed: incorrect email or password.';
+  });
+}
+function adminLogout(){ auth.signOut(); }
+
+/* ---- Real-time cloud sync of all teacher records ---- */
+ropaDocRef.onSnapshot((docSnap)=>{
+  if(docSnap.exists && docSnap.data().records && typeof docSnap.data().records === 'object'){
+    teacherRecordsCache = docSnap.data().records;
+    try{ localStorage.setItem(TEACHER_RECORDS_STORAGE_KEY, JSON.stringify(teacherRecordsCache)); }catch(e){}
+    setSyncStatus('☁ Synced', '#065f46');
+  } else {
+    teacherRecordsCache = {};
+    setSyncStatus('☁ Synced', '#065f46');
+  }
+  refreshTeacherRecordList();
+}, (err)=>{
+  console.error('Firestore sync error, using local cache:', err);
+  setSyncStatus('⚠ Offline (local only)', '#b45309');
+  try{
+    const raw = localStorage.getItem(TEACHER_RECORDS_STORAGE_KEY);
+    teacherRecordsCache = raw ? JSON.parse(raw) : {};
+  }catch(e){ teacherRecordsCache = {}; }
+  refreshTeacherRecordList();
+});
 
 function dashboardFieldState() {
     const state = {};
@@ -3520,16 +3605,19 @@ function teacherRecordKey(name) {
 }
 
 function getTeacherRecords() {
-    try {
-        const raw = localStorage.getItem(TEACHER_RECORDS_STORAGE_KEY);
-        if (!raw) return {};
-        const data = JSON.parse(raw);
-        return (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
-    } catch (_) { return {}; }
+    return teacherRecordsCache || {};
 }
 
 function setTeacherRecords(records) {
-    localStorage.setItem(TEACHER_RECORDS_STORAGE_KEY, JSON.stringify(records));
+    teacherRecordsCache = records;
+    try{ localStorage.setItem(TEACHER_RECORDS_STORAGE_KEY, JSON.stringify(records)); }catch(e){}
+    setSyncStatus('☁ Saving…', '#1e3a8a');
+    ropaDocRef.set({records: records, updatedAt: new Date().toISOString()})
+        .then(()=> setSyncStatus('☁ Synced', '#065f46'))
+        .catch((err)=>{
+            console.error('Firestore save failed:', err);
+            setSyncStatus('⚠ Save failed - check connection', '#b91c1c');
+        });
 }
 
 function refreshTeacherRecordList(selectKey = '') {
@@ -3538,10 +3626,12 @@ function refreshTeacherRecordList(selectKey = '') {
     if (!sel) return;
     const records = getTeacherRecords();
     const names = Object.keys(records).sort((a,b) => a.localeCompare(b, 'en'));
+    const prevValue = sel.value;
     sel.innerHTML = '<option value="">-- Select Saved Teacher --</option>' +
         names.map(k => `<option value="${k.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}">${(records[k].staffName || k).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}</option>`).join('');
     if (selectKey && records[selectKey]) sel.value = selectKey;
-    if (count) count.textContent = `${names.length} teacher record${names.length === 1 ? '' : 's'} saved in this browser.`;
+    else if (prevValue && records[prevValue]) sel.value = prevValue;
+    if (count) count.textContent = `${names.length} teacher record${names.length === 1 ? '' : 's'} saved in the shared cloud database.`;
 }
 
 function applyDashboardState(data) {
@@ -3580,6 +3670,11 @@ function applyDashboardState(data) {
 }
 
 function saveTeacherRecord(showMessage = true) {
+    if (!isAdmin) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to save.'; }
+        return null;
+    }
     try {
         const data = collectDashboardState();
         const key = teacherRecordKey(data.staffName);
@@ -3640,6 +3735,11 @@ function loadTeacherRecordByKey(key) {
 }
 
 function deleteTeacherRecord() {
+    if (!isAdmin) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to delete.'; }
+        return;
+    }
     const sel = document.getElementById('savedTeacherSelect');
     const key = sel ? sel.value : '';
     if (!key) {
@@ -3714,6 +3814,12 @@ function exportDashboardJSON() {
 }
 
 function importDashboardJSON(event) {
+    if (!isAdmin) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to import.'; }
+        event.target.value = '';
+        return;
+    }
     const file = event.target.files && event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
