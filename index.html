@@ -13,6 +13,26 @@
             --yellow:#ffff00; --pink:#fde2e2; --blue:#dbeafe; --red:#dc2626;
         }
 
+
+        /* Top section tabs */
+        .top-tabs {
+            position: sticky; top: 0; z-index: 1000;
+            display:flex; flex-wrap:wrap; gap:6px;
+            padding:8px; margin:0 0 16px 0;
+            background:rgba(255,255,255,.97);
+            border:1px solid #cbd5e1; border-radius:10px;
+            box-shadow:0 2px 8px rgba(0,0,0,.08);
+        }
+        .top-tabs a {
+            display:inline-block; padding:8px 12px; border-radius:7px;
+            background:#e2e8f0; color:#0f172a; text-decoration:none;
+            font-weight:700; font-size:.78rem; white-space:nowrap;
+        }
+        .top-tabs a:hover { background:#cbd5e1; }
+        .top-tabs a.active { background:#1d4ed8; color:#fff; }
+        [id] { scroll-margin-top:78px; }
+        @media print { .top-tabs { display:none !important; } }
+
         /* --- Leave Account (Register) section --- */
         .panel{background:#f1f5f9;border:1px solid var(--border-color);border-radius:6px;padding:14px 16px;margin-bottom:16px;}
         .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;}
@@ -375,8 +395,19 @@
 
 <div class="container">
     <h2>Unified ROPA Pay Fixation Matrix Dashboard</h2>
+    <nav class="top-tabs" aria-label="All sections">
+        <a href="#tab-staff">1. Staff & Service</a>
+        <a href="#tab-promotion">1A. Promotion</a>
+        <a href="#tab-ropa98">2. ROPA-1998</a>
+        <a href="#tab-ropa09">3. ROPA-2009</a>
+        <a href="#tab-ropa19">4. ROPA-2019</a>
+        <a href="#tab-leave">5. Leave Account</a>
+        <a href="#tab-cas">6. CAS Documents</a>
+        <a href="#tab-servicebook">Service Book</a>
+    </nav>
 
-    <h3>1. Staff & Service Details</h3>
+
+    <h3 id="tab-staff">1. Staff & Service Details</h3>
     <div class="grid-inputs">
         <div class="form-group">
             <label>Name of the School</label>
@@ -427,7 +458,7 @@
         <strong>Date of Retirement (DOR):</strong> Loading...
     </div>
 
-    <h3>1a. Promotion / Career Advancement / Higher Scale Movement</h3>
+    <h3 id="tab-promotion">1a. Promotion / Career Advancement / Higher Scale Movement</h3>
     <div class="grid-inputs">
         <div class="form-group">
             <label>&nbsp;</label>
@@ -472,7 +503,7 @@
     </div>
     <div id="hmAhmFormPreview"></div>
 
-    <h3>2. ROPA-1998 Pre-2006 Fixation (Always Frozen on 31-03-2009)</h3>
+    <h3 id="tab-ropa98">2. ROPA-1998 Pre-2006 Fixation (Always Frozen on 31-03-2009)</h3>
     <div class="grid-inputs">
         <div class="form-group">
             <label>&nbsp;</label>
@@ -504,7 +535,7 @@
         </div>
     </div>
 
-    <h3>3. ROPA-2009 Notional Fixation (Always Frozen on 31-12-2019)</h3>
+    <h3 id="tab-ropa09">3. ROPA-2009 Notional Fixation (Always Frozen on 31-12-2019)</h3>
     <div class="grid-inputs">
         <div class="form-group">
             <label>&nbsp;</label>
@@ -537,7 +568,7 @@
         </div>
     </div>
 
-    <h3>4. ROPA-2019 Matrix Fixation (From Option Date)</h3>
+    <h3 id="tab-ropa19">4. ROPA-2019 Matrix Fixation (From Option Date)</h3>
     <div class="grid-inputs">
         <div class="form-group">
             <label>Date of Option (ROPA-2019)</label>
@@ -624,7 +655,7 @@
         </table>
     </div>
 
-    <h3 style="margin-top:40px;border-top:3px solid var(--secondary-color);padding-top:20px;">5. Leave Account (Register)</h3>
+    <h3 id="tab-leave" style="margin-top:40px;border-top:3px solid var(--secondary-color);padding-top:20px;">5. Leave Account (Register)</h3>
     <div id="errorBanner" style="display:none;background:#fee2e2;border:1px solid #dc2626;color:#991b1b;padding:10px 14px;border-radius:6px;margin-bottom:14px;font-size:.85rem;font-weight:600;"></div>
     <p style="font-size:.8rem;color:#555;">Uses the Name, Designation and Date of Joining entered in Section 1 above. Set a retirement / generate-up-to date below (defaults to the DOR already calculated in Section 1).</p>
 
@@ -745,7 +776,7 @@
         <button class="btn-print" onclick="doPrint()">Print / Generate Leave A/c Page</button>
     </div>
 
-    <h3 style="margin-top:40px;border-top:3px solid var(--secondary-color);padding-top:20px;">6. CAS / Milestone Benefit Documents (10 / 18 / 20 Years)</h3>
+    <h3 id="tab-cas" style="margin-top:40px;border-top:3px solid var(--secondary-color);padding-top:20px;">6. CAS / Milestone Benefit Documents (10 / 18 / 20 Years)</h3>
     <div class="output-box" style="background-color:#eff6ff;border-left-color:#1d4ed8;">
         Generates the complete official document set — Part-A Option &amp; Declaration, Part-B Fixation, Forwarding Application, HOI Report, Administrator Order, and letters to the District Inspector of Schools — for whichever 10/18/20-Year milestone applies. Pay figures are pulled automatically from the ROPA-1998/2009/2019 tables in Sections 2–4, so click <strong>"Generate Pay Tables"</strong> first. The document format (ROPA-1998 / ROPA-2009 / ROPA-2019 wording and G.O. reference) is auto-selected based on which regime's timeline the milestone date actually falls in.
     </div>
@@ -879,7 +910,7 @@
 <div id="printArea">
     <div class="sb-header">
         <h1 id="sbSchoolName">TALDANGRA FULMATI HIGH SCHOOL [H.S.]</h1>
-        <h2>Service Book Verification Entry</h2>
+        <h2 id="tab-servicebook">Service Book Verification Entry</h2>
     </div>
     <table class="sb-meta-table">
         <tr>
@@ -3382,7 +3413,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
             <div class="di-memo" style="text-decoration:underline;font-weight:bold;margin-top:6px;">OFFICE MEMORANDUM</div>
         </div>
         <p style="text-align:justify;margin-top:12px;">${serviceNarrative} As per resolution adopted in the ${govType === 'MC' ? 'Managing Committee' : 'Administrator'} of the said school vide ${govOrderWord} No. ${resolutionNo}, it reveals that ${heShe} has completed ${milestoneWord.toLowerCase()} of continuous and satisfactory service on ${casFmt(completionDate)}.</p>
-        <p style="text-align:justify;">In terms of ${regimeName}, vide ${goRef}, ${sriSmt} ${staffName}, ${designation} of the said school, is hereby allowed to draw the raised pay in ${fixed.scaleLabel}${fixed.cellLabel ? ', Cell-' + fixed.cellLabel : ''} w.e.f. ${casFmt(memoEffectDate)} as per ${hisHer} option, for completion of ${milestoneWord.toLowerCase()} continuous and satisfactory service. ${hisHer[0].toUpperCase() + hisHer.slice(1)} pay is hereby fixed in the following manner.</p>
+        <p style="text-align:justify;">In terms of ${regimeName}, vide ${goRef}, ${sriSmt} ${staffName}, ${designation} of the said school, is hereby allowed to draw the raised pay of Rs. ${fixed.payLabel} in ${fixed.scaleLabel}${fixed.cellLabel ? ', Cell-' + fixed.cellLabel : ''} w.e.f. ${casFmt(memoEffectDate)}, as per ${hisHer} option, on completion of ${milestoneWord.toLowerCase()} of continuous and satisfactory service. ${hisHer[0].toUpperCase() + hisHer.slice(1)} pay is hereby fixed in the following manner.</p>
         <p style="margin:10px 0 2px;">1. ${hisHer[0].toUpperCase() + hisHer.slice(1)} existing Basic Pay as on ${casFmt(memoExistingPayDate)} in the ${memoExisting.scaleLabel}${memoExisting.cellLabel ? ' in CELL-' + memoExisting.cellLabel : ''} &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${existingNum.toLocaleString('en-IN')}</strong></p>
         <p style="margin:10px 0 2px;">2.a) Allowed Normal Increment [if required] &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${normalIncrementAmountForMemo.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${normalPayNum.toLocaleString('en-IN')} in ${normalNextPayLabel} ]</span></p>
         <p style="margin:2px 0 2px;white-space:nowrap;">&nbsp;&nbsp;&nbsp;b) Allowed one Addl. Increment for completion of ${milestoneWord.toLowerCase()} Service &nbsp;&nbsp;:&nbsp;&nbsp; <strong>Rs. ${nextPayDetails.amount.toLocaleString('en-IN')}</strong> <span style="font-size:.72em;font-weight:400;">[ i.e. Next Pay: Rs. ${nextPayDetails.nextPay.toLocaleString('en-IN')} in ${nextPayDetails.nextLabel || ''} ]</span></p>
@@ -3930,7 +3961,21 @@ function casPrintWindowShell(innerHtml, title, landscape = false, compact = fals
             .cas-pay-structure .ps-table td:nth-child(5) { width:10%; text-align:right; font-weight:700; }
             .cas-pay-structure .ps-table td:nth-child(6) { width:27%; }
             .cas-pay-structure .ps-table td:nth-child(7) { width:10%; text-align:center; font-weight:700; }
-        </style></head><body>${innerHtml}</body></html>`);
+        </style></head><body>${innerHtml}
+<script>
+(function(){
+  const links=[...document.querySelectorAll('.top-tabs a')];
+  const sections=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  function setActive(){
+    let current=sections[0];
+    for(const sec of sections){ if(sec.getBoundingClientRect().top <= 100) current=sec; }
+    links.forEach(a=>a.classList.toggle('active', document.querySelector(a.getAttribute('href'))===current));
+  }
+  window.addEventListener('scroll',setActive,{passive:true});
+  setActive();
+})();
+</script>
+</body></html>`);
     w.document.close();
     setTimeout(() => { w.focus(); w.print(); }, 300);
 }
