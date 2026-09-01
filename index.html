@@ -3246,7 +3246,7 @@ window.generateCasDocuments = function generateCasDocuments(type) {
     // The applicant remains the first-person author throughout the letter.
     const authorityRecipient = 'The Administrator,';
     const authorityShort = 'The Administrator';
-    const approvalAuthority = govType === 'Administrator' ? 'The Administrator' : 'The Secretary / President, Managing Committee';
+    const approvalAuthority = govType === 'Administrator' ? 'The Administrator' : 'The Secretary / President, Managing Committee /Adhoc-Committee';
     const mcValidUptoVal = document.getElementById('casMcValidUpto').value;
     const mcValidUpto = mcValidUptoVal ? casFmt(new Date(mcValidUptoVal + 'T00:00:00')) : '________________';
     const subDivision = document.getElementById('casSubDivision').value || '';
