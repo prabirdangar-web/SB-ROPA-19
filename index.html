@@ -1240,20 +1240,33 @@
     function resolveDateWithLwp(originalDate, entries) {
         const win = checkWindow(originalDate);
         const lwpDays = lwpDaysAppliedBy(entries, originalDate);
+
+        // Whenever LWP pushes a 10/18/20-Year milestone forward by that many days and the
+        // resulting (shifted) date itself lands within 2.1–30.6 of its own year, ROPA-09 /
+        // ROPA-19 place it at 1.7 of that year as a normal (non-deferred) increment — this
+        // applies regardless of which window the ORIGINAL (pre-LWP) milestone date fell in.
+        function finalizeShift(shiftedDate) {
+            if (checkWindow(shiftedDate) === 'A') {
+                const jul1 = new Date(shiftedDate.getFullYear(), 6, 1);
+                return { date: jul1, win: 'A', lwpShifted: false, lwpDays, lwpShiftedDate: shiftedDate, snappedToWindow: true };
+            }
+            return { date: shiftedDate, win: 'B', lwpShifted: true, lwpDays, lwpShiftedDate: shiftedDate, snappedToWindow: false };
+        }
+
         if (win === 'A') {
             const jul1 = new Date(originalDate.getFullYear(), 6, 1);
-            if (lwpDays === 0) return { date: jul1, win: 'A', lwpShifted: false };
+            if (lwpDays === 0) return { date: jul1, win: 'A', lwpShifted: false, lwpDays: 0, lwpShiftedDate: null, snappedToWindow: false };
             const jun30 = new Date(originalDate.getFullYear(), 5, 30);
             const gapDays = Math.round((jun30 - originalDate) / 86400000);
             if (lwpDays <= gapDays) {
-                return { date: jul1, win: 'A', lwpShifted: false };
+                return { date: jul1, win: 'A', lwpShifted: false, lwpDays, lwpShiftedDate: addDays(originalDate, lwpDays), snappedToWindow: true };
             }
-            return { date: addDays(originalDate, lwpDays), win: 'A', lwpShifted: true };
+            return finalizeShift(addDays(originalDate, lwpDays));
         }
         if (lwpDays > 0) {
-            return { date: addDays(originalDate, lwpDays), win: 'B', lwpShifted: true };
+            return finalizeShift(addDays(originalDate, lwpDays));
         }
-        return { date: new Date(originalDate), win: 'B', lwpShifted: false };
+        return { date: new Date(originalDate), win: 'B', lwpShifted: false, lwpDays: 0, lwpShiftedDate: null, snappedToWindow: false };
     }
 
     function resolveRopa98MilestoneDate(originalDate, entries) {
@@ -1619,7 +1632,7 @@
             if (milestone.d >= optionDate) {
                 let resolved = resolveDateWithLwp(milestone.d, lwpEntries09);
                 if (resolved.date <= endDate) {
-                    pushEvent(resolved.date, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: resolved.win, isLwpDeferred: resolved.lwpShifted, notionalDate: resolved.win === 'A' ? new Date(milestone.d.getFullYear(), 6, 1) : milestone.d });
+                    pushEvent(resolved.date, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: resolved.win, isLwpDeferred: resolved.lwpShifted, notionalDate: resolved.win === 'A' ? new Date(milestone.d.getFullYear(), 6, 1) : milestone.d, snappedToWindow: resolved.snappedToWindow, lwpDaysApplied: resolved.lwpDays, lwpShiftedDate: resolved.lwpShiftedDate });
                 }
             }
         });
@@ -1637,7 +1650,12 @@
             let existingBandPay = runningBandPay;
             let existingGp = runningGp;
             let incAmt = 0;
-            let lwpNote = ev.isLwpDeferred ? `<div class="slip-row" style="color:#c2410c;"><span>LWP (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Notional date ${formatDate(ev.notionalDate)}; financial benefit deferred to ${formatDate(ev.date)}</span></div>` : '';
+            let lwpNote = '';
+            if (ev.isLwpDeferred) {
+                lwpNote = `<div class="slip-row" style="color:#c2410c;"><span>LWP (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Notional date ${formatDate(ev.notionalDate)}; financial benefit deferred to ${formatDate(ev.date)}</span></div>`;
+            } else if (ev.snappedToWindow) {
+                lwpNote = `<div class="slip-row" style="color:#0f766e;"><span>LWP enjoyed: ${ev.lwpDaysApplied} day(s) (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Milestone notionally shifts from ${formatDate(ev.notionalDate)} to ${formatDate(ev.lwpShiftedDate)}; as shifted date falls within 2.1 to 30.6, pay fixed at NORMAL increment w.e.f. ${formatDate(ev.date)} as per ROPA-09/ROPA-19</span></div>`;
+            }
 
             if (ev.isInitial) {
                 // Staging index row
@@ -1808,7 +1826,7 @@
             if (milestone.d >= startDate) {
                 let resolved = resolveDateWithLwp(milestone.d, lwpEntries19);
                 if (resolved.date <= dor) {
-                    pushEvent(resolved.date, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: resolved.win, isLwpDeferred: resolved.lwpShifted, notionalDate: resolved.win === 'A' ? new Date(milestone.d.getFullYear(), 6, 1) : milestone.d });
+                    pushEvent(resolved.date, { label: milestone.name, isMilestone: true, exactMilestoneDate: milestone.d, win: resolved.win, isLwpDeferred: resolved.lwpShifted, notionalDate: resolved.win === 'A' ? new Date(milestone.d.getFullYear(), 6, 1) : milestone.d, snappedToWindow: resolved.snappedToWindow, lwpDaysApplied: resolved.lwpDays, lwpShiftedDate: resolved.lwpShiftedDate });
                 }
             }
         });
@@ -1827,7 +1845,12 @@
             let slipBlockHTML = "";
             let existingBasic = runningBasicPay;
             let existingLevel = runningLevel;
-            let lwpNote = ev.isLwpDeferred ? `<div class="slip-row" style="color:#c2410c;"><span>LWP (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Notional date ${formatDate(ev.notionalDate)}; financial benefit deferred to ${formatDate(ev.date)}</span></div>` : '';
+            let lwpNote = '';
+            if (ev.isLwpDeferred) {
+                lwpNote = `<div class="slip-row" style="color:#c2410c;"><span>LWP (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Notional date ${formatDate(ev.notionalDate)}; financial benefit deferred to ${formatDate(ev.date)}</span></div>`;
+            } else if (ev.snappedToWindow) {
+                lwpNote = `<div class="slip-row" style="color:#0f766e;"><span>LWP enjoyed: ${ev.lwpDaysApplied} day(s) (non-medical, G.O. 181-SE(B) Dt. 8.10.2009)</span><span>Milestone notionally shifts from ${formatDate(ev.notionalDate)} to ${formatDate(ev.lwpShiftedDate)}; as shifted date falls within 2.1 to 30.6, pay fixed at NORMAL increment w.e.f. ${formatDate(ev.date)} as per ROPA-09/ROPA-19</span></div>`;
+            }
             let promoDetail = null;
 
             if (ev.isInitial) {
