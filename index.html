@@ -417,6 +417,8 @@
             </div>
             <button type="button" class="btn-add" onclick="loadTeacherRecordFromTop()">↻ Load</button>
             <button type="button" class="btn-add" style="background:#475569;" onclick="document.getElementById('dashboardJsonImport').click()">⇧ Upload Teacher</button>
+            <button type="button" class="btn-add admin-only" style="background:#0f766e;" onclick="document.getElementById('bulkStaffImport').click()">⇧ Bulk Import All Staff</button>
+            <input type="file" id="bulkStaffImport" accept="application/json,.json" style="display:none;" onchange="bulkImportStaffJSON(event)">
             <button type="button" class="btn-generate" onclick="generateCasDocuments('10')">Generate 10-Year</button>
             <button type="button" class="btn-generate" onclick="generateCasDocuments('18')">Generate 18-Year</button>
             <button type="button" class="btn-generate" onclick="generateCasDocuments('20')">Generate 20-Year</button>
@@ -3961,6 +3963,94 @@ function importDashboardJSON(event) {
         } catch (err) {
             const status = document.getElementById('dataSaveStatus');
             if (status) { status.style.color = '#b91c1c'; status.textContent = 'Import failed: ' + err.message; }
+        } finally { event.target.value = ''; }
+    };
+    reader.readAsText(file);
+}
+
+/* ---------- BULK STAFF IMPORT (from school salary/service Excel) ----------
+   Accepts a JSON array of staff, each shaped like:
+   {
+     "staffName": "FULL NAME", "designation": "Assistant Teacher",
+     "dob": "YYYY-MM-DD", "doj": "YYYY-MM-DD" (date of FIRST joining service),
+     "sex": "M"/"F", "casApprovalNo": "...", "casDojCurrentSchool": "YYYY-MM-DD",
+     "casQualification": "...",
+     "casPriorSchools": [ {"name": "...", "doj": "YYYY-MM-DD", "dol": "YYYY-MM-DD"}, ... ]
+   }
+   Safe by design: for a staff member who is NOT yet in the shared database, a
+   fresh record is created (Basic/ROPA pay-fixation periods left empty, ready
+   for you to fill in on the relevant ROPA tab). For a staff member who
+   ALREADY has a saved record, only blank basic-info fields are filled in and
+   any pay-fixation work (periods/promotion/LWP) already entered is left
+   untouched. Nothing is ever silently overwritten. */
+function bulkImportStaffJSON(event) {
+    if (!isAdmin) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to bulk import staff.'; }
+        event.target.value = '';
+        return;
+    }
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const list = JSON.parse(e.target.result);
+            if (!Array.isArray(list)) throw new Error('Expected a JSON array of staff records.');
+            const records = getTeacherRecords();
+            let added = 0, updated = 0, skipped = 0;
+            list.forEach(person => {
+                const name = String(person.staffName || '').trim();
+                if (!name) { skipped++; return; }
+                const key = teacherRecordKey(name);
+                const priorSchools = Array.isArray(person.casPriorSchools) ? person.casPriorSchools : [];
+                const basicFields = {
+                    schoolName: document.getElementById('schoolName')?.value || 'TALDANGRA FULMATI HIGH SCHOOL [H.S.]',
+                    staffName: name,
+                    designation: person.designation || '',
+                    dob: person.dob || '',
+                    doj: person.doj || '',
+                    empStatus: 'SUBSTANTIVE',
+                    casSex: person.sex || '',
+                    casApprovalNo: person.casApprovalNo || '',
+                    casDojCurrentSchool: person.casDojCurrentSchool || '',
+                    casQualification: person.casQualification || ''
+                };
+                if (records[key]) {
+                    const existing = records[key];
+                    existing.fields = existing.fields || {};
+                    Object.keys(basicFields).forEach(id => {
+                        if (!existing.fields[id]) existing.fields[id] = basicFields[id];
+                    });
+                    existing.staffName = existing.staffName || name;
+                    if ((!existing.casPriorSchools || !existing.casPriorSchools.length) && priorSchools.length) {
+                        existing.casPriorSchools = priorSchools;
+                    }
+                    updated++;
+                } else {
+                    records[key] = {
+                        version: 4,
+                        savedAt: new Date().toISOString(),
+                        staffName: name,
+                        fields: basicFields,
+                        periods: [],
+                        masterMlEntries: [],
+                        transferEvents: [],
+                        casPriorSchools: priorSchools
+                    };
+                    added++;
+                }
+            });
+            setTeacherRecords(records);
+            refreshTeacherRecordList();
+            const status = document.getElementById('dataSaveStatus');
+            if (status) {
+                status.style.color = '#065f46';
+                status.textContent = `✓ Bulk import complete: ${added} new staff added, ${updated} existing staff updated (blank fields only)${skipped ? `, ${skipped} skipped (no name)` : ''}.`;
+            }
+        } catch (err) {
+            const status = document.getElementById('dataSaveStatus');
+            if (status) { status.style.color = '#b91c1c'; status.textContent = 'Bulk import failed: ' + err.message; }
         } finally { event.target.value = ''; }
     };
     reader.readAsText(file);
