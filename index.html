@@ -1017,25 +1017,11 @@
     </div>
 
     <div class="mof-pair">
-    <div id="mofRopa09Block" class="mof-box" style="display:none;">
-        <div class="mof-title">PAY REVISION&nbsp;&nbsp;&nbsp;MODE OF FIXATION&nbsp;&nbsp;ROPA-09</div>
-        <table class="mof-table">
-            <tr><td class="mof-label" id="mof09Label1">Pay in the existing Pay scale of pay PB-4-9000-40500-GP-RS-4800 on 01/01/2006</td><td class="mof-value" id="mof09Val1"></td></tr>
-            <tr><td class="mof-label" id="mof09Label2">Pay in Band 8550X1.86=15903 i.e.=</td><td class="mof-value" id="mof09Val2"></td></tr>
-            <tr><td class="mof-label">Applicable Grade Pay Rs.</td><td class="mof-value" id="mof09Val3"></td></tr>
-            <tr><td class="mof-label">Pay Fixed at</td><td class="mof-value" id="mof09Val4"></td></tr>
-        </table>
-        <div class="mof-note" id="mof09Note"></div>
-        <table class="mof-footer">
-            <tr><td id="mof09OptionDate"></td><td id="mof09NextIncrement"></td></tr>
-        </table>
-    </div>
-
     <div id="mofRopa19Block" class="mof-box">
         <div class="mof-title">PAY REVISION&nbsp;&nbsp;&nbsp;MODE OF FIXATION&nbsp;&nbsp;ROPA-19</div>
         <table class="mof-table">
-            <tr><td class="mof-label" id="mof19Label1">Pre-revised Basic Pay (Band Pay + Grade Pay) as on date of option i.e. on 1-1-2016</td><td class="mof-value" id="mof19Val1"></td></tr>
-            <tr><td class="mof-label" id="mof19Label2">Amount arrived at by multiplying Basic Pay by 2.57 Rounded off to nearest Rupee :</td><td class="mof-value" id="mof19Val2"></td></tr>
+            <tr><td class="mof-label" id="mof19Label1">Pre-revised Basic Pay (Band Pay + Grade Pay)<br>as on date of option i.e. on 1-1-2016</td><td class="mof-value" id="mof19Val1"></td></tr>
+            <tr><td class="mof-label" id="mof19Label2">Amount arrived at by multiplying Basic<br>Pay by 2.57 Rounded off to nearest Rupee :</td><td class="mof-value" id="mof19Val2"></td></tr>
             <tr><td class="mof-label" id="mof19Label3">Applicable Level in the Pay Matrix corresponding to the Pay Band and Grade Pay</td><td class="mof-value" id="mof19Val3"></td></tr>
             <tr><td class="mof-label" id="mof19Label4">Applicable Cell in the LEVEL-15 either equal to or next higher of the amount 73785</td><td class="mof-value" id="mof19Val4"></td></tr>
             <tr><td class="mof-label" id="mof19Label5">Revised Basic Pay as on 1-1-2016</td><td class="mof-value" id="mof19Val5"></td></tr>
@@ -1043,6 +1029,20 @@
         <div class="mof-note" id="mof19Note"></div>
         <table class="mof-footer">
             <tr><td id="mof19OptionDate"></td><td id="mof19NextIncrement"></td></tr>
+        </table>
+    </div>
+
+    <div id="mofRopa09Block" class="mof-box" style="display:none;">
+        <div class="mof-title">PAY REVISION&nbsp;&nbsp;&nbsp;MODE OF FIXATION&nbsp;&nbsp;ROPA-09</div>
+        <table class="mof-table">
+            <tr><td class="mof-label" id="mof09Label1">Pay in the existing Pay scale of pay PB-4-9000-40500-GP-RS-4800 on 01/01/2006</td><td class="mof-value" id="mof09Val1"></td></tr>
+            <tr><td class="mof-label" id="mof09Label2">Pay in Band 8550X1.86:=15903 i.e.=</td><td class="mof-value" id="mof09Val2"></td></tr>
+            <tr><td class="mof-label">Applicable Grade Pay Rs.</td><td class="mof-value" id="mof09Val3"></td></tr>
+            <tr><td class="mof-label">Pay Fixed at</td><td class="mof-value" id="mof09Val4"></td></tr>
+        </table>
+        <div class="mof-note" id="mof09Note"></div>
+        <table class="mof-footer">
+            <tr><td id="mof09OptionDate"></td><td id="mof09NextIncrement"></td></tr>
         </table>
     </div>
     </div>
@@ -2202,7 +2202,7 @@
 
             carryNote98 = `<strong>Carried Forward into ROPA-2009 (Rule II, WBS(ROPA) Rules 2009):</strong> Notional basic pay as on ${formatDate(snapAsOfDate)} under ROPA-1998 = Rs. ${snap98.basic.toLocaleString('en-IN')} &times; fitment factor 1.86 = Rs. ${rawBand.toFixed(2)} &rarr; rounded up to next Rs. 10 = Rs. ${multipliedBand.toLocaleString('en-IN')}` +
                 (minEntryApplied ? ` &rarr; below the prescribed Minimum Entry Pay in the Pay Band for GP ${ropa09InitialGp.toLocaleString('en-IN')} (Rs. ${minBandForGp.toLocaleString('en-IN')}) &rarr; stepped up to the minimum entry figure of Rs. ${ropa09InitialBand.toLocaleString('en-IN')}` : ``) +
-                ` Pay in Pay Band + Grade Pay Rs. ${ropa09InitialGp.toLocaleString('en-IN')} = Total Rs. ${(ropa09InitialBand + ropa09InitialGp).toLocaleString('en-IN')}. The ROPA-1998 table above continues independently as a notional record up to ${formatDate(ropa98EndDate)}.`;
+                ` Pay fixed Notionally in the Revised Scale of pay: PB-4-9000-40500-GP-RS-4800 at Rs.${(ropa09InitialBand + ropa09InitialGp).toLocaleString('en-IN')} in terms of G.O. No.46 SE(B) dt.27.02.09. w.e.f. 01/01/2006 [ Date of option] or w.e.f. DOJ if later 1.1.06. Pay & Allowances admissible actually w.e.f.1-4-2008 or w.e.f. DOJ if later 1.04.08.`;
 
             // Mode of Fixation (Service Book) — ROPA-2009 box data, fetched from this fixation
             mof09Data = {
@@ -2309,6 +2309,8 @@
         // ---- Populate Mode of Fixation boxes (Service Book) for ROPA-2009 / ROPA-2019 ----
         const mofBox09 = document.getElementById('mofRopa09Block');
         const fmtSlash = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+        const fmtDash = d => `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`;
+
         if (mof09Data) {
             mofBox09.style.display = '';
             const scale09 = (pbMap09[mof09Data.gradePay] || 'PB-4:9000-40500').replace(':', '-');
@@ -2316,14 +2318,18 @@
             document.getElementById('mof09Label1').textContent =
                 `Pay in the existing Pay scale of pay ${scale09}-GP-RS-${mof09Data.gradePay.toLocaleString('en-IN')} on ${fmtSlash(mof09Data.optionDate)}`;
             document.getElementById('mof09Label2').textContent =
-                `Pay in Band ${mof09Data.existingPay.toLocaleString('en-IN')}X1.86=${raw09} i.e.=`;
+                `Pay in Band ${mof09Data.existingPay.toLocaleString('en-IN')}X1.86:=${raw09} i.e.=`;
             document.getElementById('mof09Val1').textContent = 'Rs. ' + mof09Data.existingPay.toLocaleString('en-IN');
             document.getElementById('mof09Val2').textContent = 'Rs. ' + mof09Data.bandAmount.toLocaleString('en-IN');
             document.getElementById('mof09Val3').textContent = 'Rs. ' + mof09Data.gradePay.toLocaleString('en-IN');
             document.getElementById('mof09Val4').textContent = 'Rs. ' + mof09Data.fixedPay.toLocaleString('en-IN');
-            const adm09 = document.getElementById('ropa09AdmissibleDate')?.value;
+            const dojFor09 = new Date(doj);
+            const base09 = new Date(2006, 0, 1);
+            const actualBase09 = new Date(2008, 3, 1);
+            const eff09 = dojFor09 > base09 ? dojFor09 : base09;
+            const effActual09 = dojFor09 > actualBase09 ? dojFor09 : actualBase09;
             document.getElementById('mof09Note').textContent =
-                `Pay fixed Notionally in the Revised Scale of pay: ${scale09}-GP-RS-${mof09Data.gradePay.toLocaleString('en-IN')} at Rs.${mof09Data.fixedPay.toLocaleString('en-IN')} in terms of G.O. No.46 SE(B) dt.27.02.09. w.e.f. ${fmtSlash(mof09Data.optionDate)} [Date of option]. Pay & Allowances admissible actually w.e.f.${adm09 ? fmtSlash(new Date(adm09)) : ''}`;
+                `Pay fixed Notionally in the Revised Scale of pay: PB-4-9000-40500-GP-RS-4800 at Rs.${mof09Data.fixedPay.toLocaleString('en-IN')} in terms of G.O. No.46 SE(B) dt.27.02.09. w.e.f. ${fmtSlash(eff09)} [ Date of option]. Pay & Allowances admissible actually w.e.f.${fmtSlash(effActual09)}`;
             document.getElementById('mof09OptionDate').innerHTML = '<strong>Date of Option:-' + fmtSlash(mof09Data.optionDate) + '</strong>';
             const next09 = ropa09Rows.find(r => r.date > mof09Data.optionDate);
             document.getElementById('mof09NextIncrement').innerHTML = '<strong>Date of Next Increment:-' + (next09 ? fmtSlash(next09.date) : '-') + '</strong>';
@@ -2331,13 +2337,15 @@
             mofBox09.style.display = 'none';
         }
 
-        document.getElementById('mof19Label1').textContent =
-            'Pre-revised Basic Pay (Band Pay + Grade Pay) as on date of option i.e. on 1-1-2016';
-        document.getElementById('mof19Label2').textContent =
-            'Amount arrived at by multiplying Basic Pay by 2.57 Rounded off to nearest Rupee :';
-        document.getElementById('mof19Label5').textContent = 'Revised Basic Pay as on 1-1-2016';
+        document.getElementById('mof19Label1').innerHTML =
+            'Pre-revised Basic Pay (Band Pay + Grade Pay)<br>as on date of option i.e. on 1-1-2016';
+        document.getElementById('mof19Label2').innerHTML =
+            'Amount arrived at by multiplying Basic<br>Pay by 2.57 Rounded off to nearest Rupee :';
+        document.getElementById('mof19Label3').textContent =
+            'Applicable Level in the Pay Matrix corresponding to the Pay Band and Grade Pay';
         document.getElementById('mof19Label4').textContent =
             `Applicable Cell in the LEVEL-${mof19Data.level} either equal to or next higher of the amount ${mof19Data.multiplied ? mof19Data.multiplied : ''}`;
+        document.getElementById('mof19Label5').textContent = 'Revised Basic Pay as on 1-1-2016';
 
         if (mof19Data.fromRopa09) {
             document.getElementById('mof19Val1').textContent = 'Rs. ' + mof19Data.prevBasic.toLocaleString('en-IN');
@@ -2349,13 +2357,17 @@
         document.getElementById('mof19Val3').textContent = 'LEVEL-' + mof19Data.level;
         document.getElementById('mof19Val4').textContent = mof19Data.cell;
         document.getElementById('mof19Val5').textContent = 'Rs. ' + mof19Data.fixedPay.toLocaleString('en-IN');
-        const adm19 = document.getElementById('ropa19AdmissibleDate')?.value;
-        const scale19 = `LEVEL-${mof19Data.level}-PB-4-9000-0500-GP-RS-4800 T72`;
+        const dojFor19 = new Date(doj);
+        const base19 = new Date(2016, 0, 1);
+        const actualBase19 = new Date(2020, 0, 1);
+        const eff19 = dojFor19 > base19 ? dojFor19 : base19;
+        const effActual19 = dojFor19 > actualBase19 ? dojFor19 : actualBase19;
+        const scale19 = `LEVEL-${mof19Data.level}-PB-4-9000-40500-GP-RS-4800 T72`;
         document.getElementById('mof19Note').textContent =
-            `Pay fixed Notionally in the Revised Scale of pay: ${scale19} at Rs. ${mof19Data.fixedPay.toLocaleString('en-IN')} in terms of G.O.No437-SE(P&B)/SL/5S-408/19, dated 13.12.2019 w.e.f. ${formatDate(mof19Data.optionDate)} [ Date of option]. Pay & Allowances admissible actually w.e.f. ${adm19 ? formatDate(new Date(adm19)) : ''}`;
-        document.getElementById('mof19OptionDate').innerHTML = '<strong>Date of Option:-' + formatDate(mof19Data.optionDate) + '</strong>';
+            `Pay fixed Notionally in the Revised Scale of pay: ${scale19} at Rs. ${mof19Data.fixedPay.toLocaleString('en-IN')} in terms of G.O. No.437-SE(P&B)/SL/5S-408/19, dated 13.12.2019 w.e.f. ${fmtDash(eff19)} [ Date of option]. Pay & Allowances admissible actually w.e.f. ${fmtDash(effActual19)}`;
+        document.getElementById('mof19OptionDate').innerHTML = '<strong>Date of Option:-' + fmtDash(mof19Data.optionDate) + '</strong>';
         const next19 = result19.rows.find(r => r.date > mof19Data.optionDate);
-        document.getElementById('mof19NextIncrement').innerHTML = '<strong>Date of Next Increment:-' + (next19 ? formatDate(next19.date) : '-') + '</strong>';
+        document.getElementById('mof19NextIncrement').innerHTML = '<strong>Date of Next Increment:-' + (next19 ? fmtDash(next19.date) : '-') + '</strong>';
 
         document.getElementById('sbSchoolName').innerText = document.getElementById('schoolName').value;
         document.getElementById('sbStaffName').innerText = document.getElementById('staffName').value;
