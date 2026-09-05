@@ -169,23 +169,6 @@
 
         .inline-check { font-weight: 400; display: flex; align-items: center; gap: 6px; }
 
-        /* ---- Mode of Fixation remarks boxes (Service Book) ---- */
-        .mof-pair { display:flex; gap:8.5%; width:100%; align-items:stretch; margin:14px 0; }
-        .mof-pair .mof-box { flex:0 0 43%; min-width:0; margin:0; background:#fff; }
-        .mof-box { border:1.5px solid #000; background:#fff; }
-        .mof-title { text-align:center; font-weight:bold; text-decoration:underline; padding:6px 4px; border-bottom:1.5px solid #000; font-size:.92rem; }
-        table.mof-table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:0; table-layout:fixed; }
-        table.mof-table td { border:1px solid #000; padding:6px 8px; vertical-align:top; }
-        table.mof-table td.mof-label { width:66%; }
-        table.mof-table td.mof-value { width:34%; font-weight:bold; text-align:right; white-space:nowrap; }
-        .mof-note { border:1px solid #000; border-top:none; padding:6px 8px; font-size:.78rem; font-style:normal; line-height:1.25; }
-        table.mof-footer { width:100%; border-collapse:collapse; font-size:.85rem; }
-        table.mof-footer td { border:1px solid #000; border-top:none; padding:6px 8px; font-weight:bold; width:50%; }
-        @media screen and (max-width:760px) {
-            .mof-pair { flex-direction:column; }
-            .mof-pair .mof-box { width:100%; }
-        }
-
         #printArea { display: none; }
 
         @media print {
@@ -233,18 +216,6 @@
             .sb-main-table { width: 100%; border-collapse: collapse; }
             .sb-main-table th { background-color: #eaeaea !important; border: 1px solid #000 !important; font-size: 0.85rem; padding: 6px; text-align: center; }
             .sb-main-table td { border: 1px solid #000 !important; font-size: 0.85rem; padding: 6px; }
-
-            /* ---- Mode of Fixation remarks boxes (Service Book) ---- */
-            .mof-pair { display:flex !important; gap:2mm; width:100%; margin:4mm 0; page-break-inside:avoid; align-items:stretch; }
-            .mof-pair .mof-box { flex:0 0 43%; min-width:0; margin:0; page-break-inside:avoid; }
-            .mof-box { border:1.5px solid #000 !important; page-break-inside:avoid; }
-            .mof-title { border-bottom:1.5px solid #000 !important; font-size:9.5pt; padding:1.6mm 1mm; }
-            table.mof-table { table-layout:fixed; font-size:8.4pt; }
-            table.mof-table td { border:1px solid #000 !important; font-size:8.4pt; padding:1.3mm 1.5mm; }
-            table.mof-table td.mof-label { width:68%; }
-            table.mof-table td.mof-value { width:32%; font-size:9pt; }
-            .mof-note { border:1px solid #000 !important; font-size:7.5pt; padding:1.5mm 1.5mm; line-height:1.25; }
-            table.mof-footer td { border:1px solid #000 !important; font-size:8.2pt; padding:1.3mm 1.5mm; }
             .slip-box { border: 1px solid #000 !important; background: none !important; }
             .no-print { display: none !important; }
 
@@ -624,10 +595,6 @@
             <label>Initial Band Pay (Excluding GP)</label>
             <input type="number" id="ropa09BandPay" value="8650">
         </div>
-        <div class="form-group">
-            <label>Pay &amp; Allowances Actually Admissible W.E.F. (optional, for Service Book remarks)</label>
-            <input type="date" id="ropa09AdmissibleDate">
-        </div>
     </div>
 
     <h3 id="tab-ropa19">4. ROPA-2019 Matrix Fixation (From Option Date)</h3>
@@ -654,10 +621,6 @@
         <div class="form-group" id="ropa19ManualBasicGroup" style="display:none;">
             <label>Basic Pay (manual)</label>
             <input type="number" id="ropa19BasicPayManual" value="66000">
-        </div>
-        <div class="form-group">
-            <label>Pay &amp; Allowances Actually Admissible W.E.F. (optional, for Service Book remarks)</label>
-            <input type="date" id="ropa19AdmissibleDate">
         </div>
     </div>
 
@@ -1014,37 +977,6 @@
             </thead>
             <tbody id="sbPrintTableBody09"></tbody>
         </table>
-    </div>
-
-    <div class="mof-pair">
-    <div id="mofRopa19Block" class="mof-box">
-        <div class="mof-title">PAY REVISION&nbsp;&nbsp;&nbsp;MODE OF FIXATION&nbsp;&nbsp;ROPA-19</div>
-        <table class="mof-table">
-            <tr><td class="mof-label" id="mof19Label1">Pre-revised Basic Pay (Band Pay + Grade Pay)<br>as on date of option i.e. on 1-1-2016</td><td class="mof-value" id="mof19Val1"></td></tr>
-            <tr><td class="mof-label" id="mof19Label2">Amount arrived at by multiplying Basic<br>Pay by 2.57 Rounded off to nearest Rupee :</td><td class="mof-value" id="mof19Val2"></td></tr>
-            <tr><td class="mof-label" id="mof19Label3">Applicable Level in the Pay Matrix corresponding to the Pay Band and Grade Pay</td><td class="mof-value" id="mof19Val3"></td></tr>
-            <tr><td class="mof-label" id="mof19Label4">Applicable Cell in the LEVEL-15 either equal to or next higher of the amount 73785</td><td class="mof-value" id="mof19Val4"></td></tr>
-            <tr><td class="mof-label" id="mof19Label5">Revised Basic Pay as on 1-1-2016</td><td class="mof-value" id="mof19Val5"></td></tr>
-        </table>
-        <div class="mof-note" id="mof19Note"></div>
-        <table class="mof-footer">
-            <tr><td id="mof19OptionDate"></td><td id="mof19NextIncrement"></td></tr>
-        </table>
-    </div>
-
-    <div id="mofRopa09Block" class="mof-box" style="display:none;">
-        <div class="mof-title">PAY REVISION&nbsp;&nbsp;&nbsp;MODE OF FIXATION&nbsp;&nbsp;ROPA-09</div>
-        <table class="mof-table">
-            <tr><td class="mof-label" id="mof09Label1">Pay in the existing Pay scale of pay PB-4-9000-40500-GP-RS-4800 on 01/01/2006</td><td class="mof-value" id="mof09Val1"></td></tr>
-            <tr><td class="mof-label" id="mof09Label2">Pay in Band 8550X1.86:=15903 i.e.=</td><td class="mof-value" id="mof09Val2"></td></tr>
-            <tr><td class="mof-label">Applicable Grade Pay Rs.</td><td class="mof-value" id="mof09Val3"></td></tr>
-            <tr><td class="mof-label">Pay Fixed at</td><td class="mof-value" id="mof09Val4"></td></tr>
-        </table>
-        <div class="mof-note" id="mof09Note"></div>
-        <table class="mof-footer">
-            <tr><td id="mof09OptionDate"></td><td id="mof09NextIncrement"></td></tr>
-        </table>
-    </div>
     </div>
 
     <h2 class="sb-section-title">ROPA-2019 Matrix Fixation (From Option Date)</h2>
@@ -2164,8 +2096,6 @@
         let carryGp, carryBasic, carryLevel;
         let carryNote = "";
         let carryNote98 = "";
-        let mof09Data = null;
-        let mof19Data = null;
         let axData = { ropa98Enabled: enableRopa98, ropa09Enabled: enableRopa09, ropa19OptionDate: ropa19OptionDate };
 
         let ropa09InitialGp, ropa09InitialBand, ropa09HasCarry = false;
@@ -2202,18 +2132,7 @@
 
             carryNote98 = `<strong>Carried Forward into ROPA-2009 (Rule II, WBS(ROPA) Rules 2009):</strong> Notional basic pay as on ${formatDate(snapAsOfDate)} under ROPA-1998 = Rs. ${snap98.basic.toLocaleString('en-IN')} &times; fitment factor 1.86 = Rs. ${rawBand.toFixed(2)} &rarr; rounded up to next Rs. 10 = Rs. ${multipliedBand.toLocaleString('en-IN')}` +
                 (minEntryApplied ? ` &rarr; below the prescribed Minimum Entry Pay in the Pay Band for GP ${ropa09InitialGp.toLocaleString('en-IN')} (Rs. ${minBandForGp.toLocaleString('en-IN')}) &rarr; stepped up to the minimum entry figure of Rs. ${ropa09InitialBand.toLocaleString('en-IN')}` : ``) +
-                ` Pay fixed Notionally in the Revised Scale of pay: PB-4-9000-40500-GP-RS-4800 at Rs.${(ropa09InitialBand + ropa09InitialGp).toLocaleString('en-IN')} in terms of G.O. No.46 SE(B) dt.27.02.09. w.e.f. 01/01/2006 [ Date of option] or w.e.f. DOJ if later 1.1.06. Pay & Allowances admissible actually w.e.f.1-4-2008 or w.e.f. DOJ if later 1.04.08.`;
-
-            // Mode of Fixation (Service Book) — ROPA-2009 box data, fetched from this fixation
-            mof09Data = {
-                existingPay: snap98.basic,
-                bandAmount: multipliedBand,
-                minEntryApplied: minEntryApplied,
-                minEntryValue: minBandForGp,
-                gradePay: ropa09InitialGp,
-                fixedPay: ropa09InitialBand + ropa09InitialGp,
-                optionDate: snapAsOfDate
-            };
+                ` Pay in Pay Band + Grade Pay Rs. ${ropa09InitialGp.toLocaleString('en-IN')} = Total Rs. ${(ropa09InitialBand + ropa09InitialGp).toLocaleString('en-IN')}. The ROPA-1998 table above continues independently as a notional record up to ${formatDate(ropa98EndDate)}.`;
         }
 
         if (enableRopa09) {
@@ -2230,14 +2149,6 @@
 
             const result09 = computeRopa09Timeline(doj, ropa09OptionDate, ropa09Gp, ropa09BandPay, ropa09EndDate, promotionDate, promotionTargetGp, evType);
             ropa09Rows = result09.rows;
-
-            // Populate Mode of Fixation note into the REM (Event/Reason/Steps) column of the initial ROPA-2009 row
-            if (ropa09Rows.length) {
-                const mofNoteHTML09 = ropa09HasCarry
-                    ? carryNote98
-                    : `<strong>Manual Entry:</strong> ROPA-2009 fixation starts at Rs. ${ropa09BandPay.toLocaleString('en-IN')} (BP Rs. ${ropa09BandPay.toLocaleString('en-IN')} + GP Rs. ${ropa09Gp.toLocaleString('en-IN')}) = Rs. ${(ropa09BandPay + ropa09Gp).toLocaleString('en-IN')} as on ${formatDate(ropa09OptionDate)}.`;
-                ropa09Rows[0].slipHTML = `<div class="slip-box" style="font-size:.78rem;font-style:italic;">${mofNoteHTML09}</div>` + (ropa09Rows[0].slipHTML || '');
-            }
 
             axData.ropa09Gp = ropa09Gp;
             axData.ropa09BandPay = ropa09BandPay;
@@ -2256,32 +2167,12 @@
             axData.revisedRaw = revisedRaw;
 
             carryNote = `<strong>Carried Forward into ROPA-2019 (Rule 7, WBS(RPA) Rules 2019):</strong> Notional pay as on ${formatDate(ropa19OptionDate)} under ROPA-2009 = BP Rs. ${snap.bandPay.toLocaleString('en-IN')} + GP Rs. ${snap.gp.toLocaleString('en-IN')} = Rs. ${notionalBasic.toLocaleString('en-IN')} &times; fitment factor 2.57 = Rs. ${revisedRaw.toLocaleString('en-IN')} &rarr; located at equal/next-higher cell in ROPA-2019 Level-${carryLevel}: Rs. ${carryBasic.toLocaleString('en-IN')} (${fit.cell}). The ROPA-2009 table above continues independently as a notional record up to ${formatDate(ropa09EndDate)}.`;
-
-            // Mode of Fixation (Service Book) — ROPA-2019 box data, carried from ROPA-2009
-            mof19Data = {
-                prevBasic: notionalBasic,
-                multiplied: revisedRaw,
-                level: carryLevel,
-                cell: fit.cell,
-                fixedPay: carryBasic,
-                optionDate: ropa19OptionDate,
-                fromRopa09: true
-            };
         } else {
             carryGp = parseInt(document.getElementById('ropa19GradePayManual').value, 10);
             carryBasic = parseInt(document.getElementById('ropa19BasicPayManual').value, 10);
             if (isNaN(carryGp) || isNaN(carryBasic)) return;
             carryLevel = levelMap19[carryGp] || 1;
             carryNote = `<strong>Manual Entry:</strong> ROPA-2019 fixation starts at Rs. ${carryBasic.toLocaleString('en-IN')} (GP Rs. ${carryGp.toLocaleString('en-IN')}, Level-${carryLevel}) as on ${formatDate(ropa19OptionDate)}.`;
-
-            // Mode of Fixation (Service Book) — ROPA-2019 box data, manual entry (no ROPA-2009 leg)
-            mof19Data = {
-                fixedPay: carryBasic,
-                level: carryLevel,
-                cell: findCell19(carryLevel, carryBasic).cell,
-                optionDate: ropa19OptionDate,
-                fromRopa09: false
-            };
         }
 
         const promotionDateInput19 = document.getElementById('promotionDate').value;
@@ -2290,11 +2181,6 @@
 
         const result19 = computeRopa19Timeline(doj, ropa19OptionDate, carryGp, carryLevel, carryBasic, dor, promotionDate19, promotionTargetGp19, evType);
         window._lastResult19Rows = result19.rows;
-
-        // Populate Mode of Fixation note into the REM (Event/Reason/Steps) column of the initial ROPA-2019 row
-        if (result19.rows.length) {
-            result19.rows[0].slipHTML = `<div class="slip-box" style="font-size:.78rem;font-style:italic;">${carryNote}</div>` + (result19.rows[0].slipHTML || '');
-        }
 
         axData.carryGp = carryGp;
         axData.carryBasic = carryBasic;
@@ -2305,69 +2191,6 @@
         document.getElementById('carryForwardOutput98').innerHTML = carryNote98;
         document.getElementById('carryForwardOutput').style.display = '';
         document.getElementById('carryForwardOutput').innerHTML = carryNote;
-
-        // ---- Populate Mode of Fixation boxes (Service Book) for ROPA-2009 / ROPA-2019 ----
-        const mofBox09 = document.getElementById('mofRopa09Block');
-        const fmtSlash = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-        const fmtDash = d => `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`;
-
-        if (mof09Data) {
-            mofBox09.style.display = '';
-            const scale09 = (pbMap09[mof09Data.gradePay] || 'PB-4:9000-40500').replace(':', '-');
-            const raw09 = Math.round(mof09Data.existingPay * 1.86);
-            document.getElementById('mof09Label1').textContent =
-                `Pay in the existing Pay scale of pay ${scale09}-GP-RS-${mof09Data.gradePay.toLocaleString('en-IN')} on ${fmtSlash(mof09Data.optionDate)}`;
-            document.getElementById('mof09Label2').textContent =
-                `Pay in Band ${mof09Data.existingPay.toLocaleString('en-IN')}X1.86:=${raw09} i.e.=`;
-            document.getElementById('mof09Val1').textContent = 'Rs. ' + mof09Data.existingPay.toLocaleString('en-IN');
-            document.getElementById('mof09Val2').textContent = 'Rs. ' + mof09Data.bandAmount.toLocaleString('en-IN');
-            document.getElementById('mof09Val3').textContent = 'Rs. ' + mof09Data.gradePay.toLocaleString('en-IN');
-            document.getElementById('mof09Val4').textContent = 'Rs. ' + mof09Data.fixedPay.toLocaleString('en-IN');
-            const dojFor09 = new Date(doj);
-            const base09 = new Date(2006, 0, 1);
-            const actualBase09 = new Date(2008, 3, 1);
-            const eff09 = dojFor09 > base09 ? dojFor09 : base09;
-            const effActual09 = dojFor09 > actualBase09 ? dojFor09 : actualBase09;
-            document.getElementById('mof09Note').textContent =
-                `Pay fixed Notionally in the Revised Scale of pay: PB-4-9000-40500-GP-RS-4800 at Rs.${mof09Data.fixedPay.toLocaleString('en-IN')} in terms of G.O. No.46 SE(B) dt.27.02.09. w.e.f. ${fmtSlash(eff09)} [ Date of option]. Pay & Allowances admissible actually w.e.f.${fmtSlash(effActual09)}`;
-            document.getElementById('mof09OptionDate').innerHTML = '<strong>Date of Option:-' + fmtSlash(mof09Data.optionDate) + '</strong>';
-            const next09 = ropa09Rows.find(r => r.date > mof09Data.optionDate);
-            document.getElementById('mof09NextIncrement').innerHTML = '<strong>Date of Next Increment:-' + (next09 ? fmtSlash(next09.date) : '-') + '</strong>';
-        } else {
-            mofBox09.style.display = 'none';
-        }
-
-        document.getElementById('mof19Label1').innerHTML =
-            'Pre-revised Basic Pay (Band Pay + Grade Pay)<br>as on date of option i.e. on 1-1-2016';
-        document.getElementById('mof19Label2').innerHTML =
-            'Amount arrived at by multiplying Basic<br>Pay by 2.57 Rounded off to nearest Rupee :';
-        document.getElementById('mof19Label3').textContent =
-            'Applicable Level in the Pay Matrix corresponding to the Pay Band and Grade Pay';
-        document.getElementById('mof19Label4').textContent =
-            `Applicable Cell in the LEVEL-${mof19Data.level} either equal to or next higher of the amount ${mof19Data.multiplied ? mof19Data.multiplied : ''}`;
-        document.getElementById('mof19Label5').textContent = 'Revised Basic Pay as on 1-1-2016';
-
-        if (mof19Data.fromRopa09) {
-            document.getElementById('mof19Val1').textContent = 'Rs. ' + mof19Data.prevBasic.toLocaleString('en-IN');
-            document.getElementById('mof19Val2').textContent = 'Rs. ' + mof19Data.multiplied.toLocaleString('en-IN');
-        } else {
-            document.getElementById('mof19Val1').textContent = '-';
-            document.getElementById('mof19Val2').textContent = '-';
-        }
-        document.getElementById('mof19Val3').textContent = 'LEVEL-' + mof19Data.level;
-        document.getElementById('mof19Val4').textContent = mof19Data.cell;
-        document.getElementById('mof19Val5').textContent = 'Rs. ' + mof19Data.fixedPay.toLocaleString('en-IN');
-        const dojFor19 = new Date(doj);
-        const base19 = new Date(2016, 0, 1);
-        const actualBase19 = new Date(2020, 0, 1);
-        const eff19 = dojFor19 > base19 ? dojFor19 : base19;
-        const effActual19 = dojFor19 > actualBase19 ? dojFor19 : actualBase19;
-        const scale19 = `LEVEL-${mof19Data.level}-PB-4-9000-40500-GP-RS-4800 T72`;
-        document.getElementById('mof19Note').textContent =
-            `Pay fixed Notionally in the Revised Scale of pay: ${scale19} at Rs. ${mof19Data.fixedPay.toLocaleString('en-IN')} in terms of G.O. No.437-SE(P&B)/SL/5S-408/19, dated 13.12.2019 w.e.f. ${fmtDash(eff19)} [ Date of option]. Pay & Allowances admissible actually w.e.f. ${fmtDash(effActual19)}`;
-        document.getElementById('mof19OptionDate').innerHTML = '<strong>Date of Option:-' + fmtDash(mof19Data.optionDate) + '</strong>';
-        const next19 = result19.rows.find(r => r.date > mof19Data.optionDate);
-        document.getElementById('mof19NextIncrement').innerHTML = '<strong>Date of Next Increment:-' + (next19 ? fmtDash(next19.date) : '-') + '</strong>';
 
         document.getElementById('sbSchoolName').innerText = document.getElementById('schoolName').value;
         document.getElementById('sbStaffName').innerText = document.getElementById('staffName').value;
@@ -2394,6 +2217,7 @@
         window.CAS_ropa09Rows = enableRopa09 ? ropa09Rows : [];
         window.CAS_ropa19Rows = result19.rows;
         window.CAS_dataReady = true;
+        window.CAS_axData = axData;
     }
 
     /* ---------- Annexure-III (ROPA-2009 & ROPA-2019) Initial Pay Fixation Forms — official-format print output ---------- */
@@ -3141,6 +2965,70 @@ function casInitDefaultStaffData() {
     }
 }
 
+/* ---------- Mode-of-Fixation remarks boxes (ROPA-09 from ROPA-98 / ROPA-19 from ROPA-09) ----------
+   Used only inside the Service Book "Pay Structure" Remarks column, on the exact row where the
+   pay revision / carry-forward happens. Pulls the already-computed figures from window.CAS_axData
+   (set by processFixationTimeline) — no other calculation, table, or document is touched. */
+function casMofRs(n) {
+    const num = Number(n);
+    return Number.isFinite(num) ? 'Rs. ' + num.toLocaleString('en-IN') : '';
+}
+function casMofBoxWrap(titleText, rows, noteHTML, optionDateText, nextIncrementText) {
+    const rowsHTML = rows.map(r => `
+        <tr>
+          <td style="padding:2px 6px 2px 0;border-bottom:1px solid #e2e8f0;">${r[0]}</td>
+          <td style="padding:2px 0 2px 6px;border-bottom:1px solid #e2e8f0;border-left:1px solid #e2e8f0;text-align:right;white-space:nowrap;font-weight:600;">${r[1]}</td>
+        </tr>`).join('');
+    return `
+      <div style="border:1px solid #94a3b8;margin-top:4px;font-weight:400;font-size:.78em;">
+        <div style="background:#f1f5f9;border-bottom:1px solid #94a3b8;text-align:center;font-weight:700;padding:2px 4px;">${titleText}</div>
+        <table style="width:100%;border-collapse:collapse;">${rowsHTML}</table>
+        <div style="padding:3px 6px;border-top:1px solid #94a3b8;">${noteHTML}</div>
+        <table style="width:100%;border-collapse:collapse;border-top:1px solid #94a3b8;">
+          <tr>
+            <td style="padding:2px 6px;">Date of Option: ${optionDateText}</td>
+            <td style="padding:2px 6px;border-left:1px solid #94a3b8;">Date of Next Increment: ${nextIncrementText}</td>
+          </tr>
+        </table>
+      </div>`;
+}
+function casBuildModeOfFixation09Box() {
+    const ax = window.CAS_axData;
+    if (!ax || !ax.ropa98Enabled) return '';
+    const scaleLabel = ropa98ScaleLabel(ax.ropa98Scale);
+    const pbLabel09 = (pbMap09[ax.ropa09Gp] || '') + '-GP-RS-' + ax.ropa09Gp;
+    const rawBand = ax.ropa98BasicPay * 1.86;
+    const revisedBasic09 = ax.ropa09BandPay + ax.ropa09Gp;
+    const optDate = formatDate(ax.ropa09OptionDate);
+    const nextInc09 = (window.CAS_ropa09Rows || []).find(r => r.date > ax.ropa09OptionDate && /INCREMENT/i.test(r.label));
+    const nextIncDate = nextInc09 ? formatDate(nextInc09.date) : '&mdash;';
+    const note = `Pay fixed Notionally in the Revised Scale of pay: ${pbLabel09} at ${casMofRs(revisedBasic09)} in terms of ${CAS_GO_REF['09']} w.e.f. ${optDate} [Date of option]. Pay &amp; Allowances admissible actually w.e.f. 1-4-2008.`;
+    return casMofBoxWrap('PAY REVISION _ MODE OF FIXATION_ROPA-09', [
+        [`Pay in the existing Scale of pay ${scaleLabel} on ${optDate}`, casMofRs(ax.ropa98BasicPay)],
+        [`Pay in Band ${ax.ropa98BasicPay.toLocaleString('en-IN')}&times;1.86:=${Math.round(rawBand).toLocaleString('en-IN')} i.e.=`, casMofRs(ax.ropa09BandPay)],
+        [`Applicable Grade Pay Rs.`, casMofRs(ax.ropa09Gp)],
+        [`Pay Fixed at`, casMofRs(revisedBasic09)]
+    ], note, optDate, nextIncDate);
+}
+function casBuildModeOfFixation19Box() {
+    const ax = window.CAS_axData;
+    if (!ax || !ax.ropa09Enabled) return '';
+    const levelStr = 'LEVEL-' + String(ax.carryLevel).padStart(2, '0');
+    const pbLabel19 = `${levelStr}-${(pbMap09[ax.carryGp] || '')}-GP-RS-${ax.carryGp}`;
+    const optDate = formatDate(ax.ropa19OptionDate);
+    const cellLabel = ax.ax19Cell || '';
+    const nextAfter19 = (window.CAS_ropa19Rows || []).find(r => r.date > ax.ropa19OptionDate);
+    const nextIncDate = nextAfter19 ? formatDate(nextAfter19.date) : '&mdash;';
+    const note = `Pay fixed Notionally in the Revised Scale of pay: ${pbLabel19} at ${casMofRs(ax.carryBasic)} in terms of ${CAS_GO_REF['19']} w.e.f. ${optDate} [Date of option]. Pay &amp; Allowances admissible actually w.e.f. 1-1-2020.`;
+    return casMofBoxWrap('PAY REVISION _ MODE OF FIXATION_ROPA-19', [
+        [`Pre-revised Basic Pay (Band Pay + Grade Pay) as on date of option i.e. on ${optDate}`, casMofRs(ax.notionalBasic)],
+        [`Amount arrived at by multiplying Basic Pay by 2.57 Rounded off to nearest Rupee`, casMofRs(ax.revisedRaw)],
+        [`Applicable Level in the Pay Matrix corresponding to the Pay Band and Grade Pay`, levelStr],
+        [`Applicable Cell in the ${levelStr} either equal to or next higher of the amount ${Math.round(ax.revisedRaw).toLocaleString('en-IN')}`, `Cell-${cellLabel}`],
+        [`Revised Basic Pay as on ${optDate}`, casMofRs(ax.carryBasic)]
+    ], note, optDate, nextIncDate);
+}
+
 function casBuildPayStructureDoc(type, cutoffDate, staffName, designation, schoolName, schoolAddr, doj) {
     const cutoff = cutoffDate instanceof Date && !isNaN(cutoffDate) ? cutoffDate : null;
     const fmtMoney = v => {
@@ -3177,8 +3065,9 @@ function casBuildPayStructureDoc(type, cutoffDate, staffName, designation, schoo
         if (upper.includes('10 YEARS')) remarks = '<strong>10 YEARS</strong>';
         else if (upper.includes('18 YEARS')) remarks = '<strong>18 YEARS</strong>';
         else if (upper.includes('20 YEARS')) remarks = '<strong>20 YEARS</strong>';
-        else if (upper.includes('DOA')) remarks = '<strong>DOA / PAY REVISION</strong>';
+        else if (upper.includes('DOA')) remarks = '<strong>DOA / PAY REVISION</strong>' + casBuildModeOfFixation09Box();
         else if (upper.includes('PAY REVISION')) remarks = '<strong>PAY REVISION</strong>';
+        else if (regimeLabel === 'ROPA-2019' && upper.includes('FITMENT')) remarks = '<strong>' + (r.label || '') + '</strong>' + casBuildModeOfFixation19Box();
         htmlRows.push({
             doa: safeDate(r.date),
             scale: scaleWithCell(r, regimeLabel),
