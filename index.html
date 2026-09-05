@@ -419,6 +419,8 @@
             <button type="button" class="btn-add" style="background:#475569;" onclick="document.getElementById('dashboardJsonImport').click()">⇧ Upload Teacher</button>
             <button type="button" class="btn-add admin-only" style="background:#0f766e;" onclick="document.getElementById('bulkStaffImport').click()">⇧ Bulk Import All Staff</button>
             <input type="file" id="bulkStaffImport" accept="application/json,.json" style="display:none;" onchange="bulkImportStaffJSON(event)">
+            <button type="button" class="btn-add" style="background:#0891b2;" onclick="exportAllTeachersJSON()">⇩ Export All Teachers</button>
+            <button type="button" class="btn-add admin-only" style="background:#0f766e;" onclick="document.getElementById('allTeachersJsonImport').click()">⇧ Import All Teachers</button>
             <button type="button" class="btn-generate" onclick="generateCasDocuments('10')">Generate 10-Year</button>
             <button type="button" class="btn-generate" onclick="generateCasDocuments('18')">Generate 18-Year</button>
             <button type="button" class="btn-generate" onclick="generateCasDocuments('20')">Generate 20-Year</button>
@@ -915,6 +917,9 @@
             <button type="button" class="btn-add" style="background:#7c3aed;" onclick="exportDashboardJSON()">⇩ Export Current JSON</button>
             <button type="button" class="btn-add admin-only" style="background:#475569;" onclick="document.getElementById('dashboardJsonImport').click()">⇧ Import JSON</button>
             <input type="file" id="dashboardJsonImport" accept="application/json,.json" style="display:none;" onchange="importDashboardJSON(event)">
+            <button type="button" class="btn-add" style="background:#0891b2;" onclick="exportAllTeachersJSON()">⇩ Export All Teachers</button>
+            <button type="button" class="btn-add admin-only" style="background:#0f766e;" onclick="document.getElementById('allTeachersJsonImport').click()">⇧ Import All Teachers</button>
+            <input type="file" id="allTeachersJsonImport" accept="application/json,.json" style="display:none;" onchange="importAllTeachersJSON(event)">
         </div>
         <div id="dataSaveStatus" style="margin-top:8px;font-size:.8rem;font-weight:700;color:#065f46;"></div>
         <div id="teacherRecordCount" style="margin-top:4px;font-size:.75rem;color:#475569;"></div>
@@ -2992,7 +2997,17 @@ function casMofBoxWrap(titleText, rows, noteHTML, optionDateText, nextIncrementT
         </table>
       </div>`;
 }
-function casBuildModeOfFixation09Box() {
+// Resolves whether the w.e.f. date in the Mode-of-Fixation note should be labelled
+// "DATE OF OPTION" or "DATE OF JOINING": if the statutory revision date (1-1-2006 for
+// ROPA-09, 1-1-2016 for ROPA-19) is later than the employee's 1st Date of Joining
+// (i.e. the employee was already in service and had an option to exercise), it is
+// "DATE OF OPTION"; otherwise (employee joined on/after the statutory date, so pay was
+// fixed directly from the date of joining, with no option involved) it is "DATE OF JOINING".
+function casMofOptionOrJoiningLabel(statutoryDate, doj) {
+    if (doj instanceof Date && !isNaN(doj) && statutoryDate > doj) return 'DATE OF OPTION';
+    return 'DATE OF JOINING';
+}
+function casBuildModeOfFixation09Box(doj) {
     const ax = window.CAS_axData;
     if (!ax || !ax.ropa98Enabled) return '';
     const scaleLabel = ropa98ScaleLabel(ax.ropa98Scale);
@@ -3000,9 +3015,10 @@ function casBuildModeOfFixation09Box() {
     const rawBand = ax.ropa98BasicPay * 1.86;
     const revisedBasic09 = ax.ropa09BandPay + ax.ropa09Gp;
     const optDate = formatDate(ax.ropa09OptionDate);
+    const dateLabel09 = casMofOptionOrJoiningLabel(new Date(2006, 0, 1), doj);
     const nextInc09 = (window.CAS_ropa09Rows || []).find(r => r.date > ax.ropa09OptionDate && /INCREMENT/i.test(r.label));
     const nextIncDate = nextInc09 ? formatDate(nextInc09.date) : '&mdash;';
-    const note = `Pay fixed Notionally in the Revised Scale of pay: ${pbLabel09} at ${casMofRs(revisedBasic09)} in terms of ${CAS_GO_REF['09']} w.e.f. ${optDate} [DATE OF OPTION / DATE OF JOINING]. Pay &amp; Allowances admissible actually w.e.f. 1-4-2008.`;
+    const note = `Pay fixed Notionally in the Revised Scale of pay: ${pbLabel09} at ${casMofRs(revisedBasic09)} in terms of ${CAS_GO_REF['09']} w.e.f. ${optDate} [${dateLabel09}]. Pay &amp; Allowances admissible actually w.e.f. 1-4-2008.`;
     return casMofBoxWrap('PAY REVISION _ MODE OF FIXATION_ROPA-09', [
         [`Pay in the existing Scale of pay ${scaleLabel} on ${optDate}`, casMofRs(ax.ropa98BasicPay)],
         [`Pay in Band ${ax.ropa98BasicPay.toLocaleString('en-IN')}&times;1.86:=${Math.round(rawBand).toLocaleString('en-IN')} i.e.=`, casMofRs(ax.ropa09BandPay)],
@@ -3010,16 +3026,17 @@ function casBuildModeOfFixation09Box() {
         [`Pay Fixed at`, casMofRs(revisedBasic09)]
     ], note, optDate, nextIncDate);
 }
-function casBuildModeOfFixation19Box() {
+function casBuildModeOfFixation19Box(doj) {
     const ax = window.CAS_axData;
     if (!ax || !ax.ropa09Enabled) return '';
     const levelStr = 'LEVEL-' + String(ax.carryLevel).padStart(2, '0');
     const pbLabel19 = `${levelStr}-${(pbMap09[ax.carryGp] || '')}-GP-RS-${ax.carryGp}`;
     const optDate = formatDate(ax.ropa19OptionDate);
+    const dateLabel19 = casMofOptionOrJoiningLabel(new Date(2016, 0, 1), doj);
     const cellLabel = ax.ax19Cell || '';
     const nextAfter19 = (window.CAS_ropa19Rows || []).find(r => r.date > ax.ropa19OptionDate);
     const nextIncDate = nextAfter19 ? formatDate(nextAfter19.date) : '&mdash;';
-    const note = `Pay fixed Notionally in the Revised Scale of pay: ${pbLabel19} at ${casMofRs(ax.carryBasic)} in terms of ${CAS_GO_REF['19']} w.e.f. ${optDate} [Date of option]. Pay &amp; Allowances admissible actually w.e.f. 1-1-2020.`;
+    const note = `Pay fixed Notionally in the Revised Scale of pay: ${pbLabel19} at ${casMofRs(ax.carryBasic)} in terms of ${CAS_GO_REF['19']} w.e.f. ${optDate} [${dateLabel19}]. Pay &amp; Allowances admissible actually w.e.f. 1-1-2020.`;
     return casMofBoxWrap('PAY REVISION _ MODE OF FIXATION_ROPA-19', [
         [`Pre-revised Basic Pay (Band Pay + Grade Pay) as on date of option i.e. on ${optDate}`, casMofRs(ax.notionalBasic)],
         [`Amount arrived at by multiplying Basic Pay by 2.57 Rounded off to nearest Rupee`, casMofRs(ax.revisedRaw)],
@@ -3065,9 +3082,9 @@ function casBuildPayStructureDoc(type, cutoffDate, staffName, designation, schoo
         if (upper.includes('10 YEARS')) remarks = '<strong>10 YEARS</strong>';
         else if (upper.includes('18 YEARS')) remarks = '<strong>18 YEARS</strong>';
         else if (upper.includes('20 YEARS')) remarks = '<strong>20 YEARS</strong>';
-        else if (upper.includes('DOA')) remarks = '<strong>DOA / PAY REVISION</strong>' + casBuildModeOfFixation09Box();
+        else if (upper.includes('DOA')) remarks = '<strong>DOA / PAY REVISION</strong>' + casBuildModeOfFixation09Box(doj);
         else if (upper.includes('PAY REVISION')) remarks = '<strong>PAY REVISION</strong>';
-        else if (regimeLabel === 'ROPA-2019' && upper.includes('FITMENT')) remarks = '<strong>' + (r.label || '') + '</strong>' + casBuildModeOfFixation19Box();
+        else if (regimeLabel === 'ROPA-2019' && upper.includes('FITMENT')) remarks = '<strong>' + (r.label || '') + '</strong>' + casBuildModeOfFixation19Box(doj);
         htmlRows.push({
             doa: safeDate(r.date),
             scale: scaleWithCell(r, regimeLabel),
@@ -4029,6 +4046,70 @@ function importDashboardJSON(event) {
         } catch (err) {
             const status = document.getElementById('dataSaveStatus');
             if (status) { status.style.color = '#b91c1c'; status.textContent = 'Import failed: ' + err.message; }
+        } finally { event.target.value = ''; }
+    };
+    reader.readAsText(file);
+}
+
+/* ---------- EXPORT ALL / IMPORT ALL (full backup & restore of every saved teacher) ----------
+   Unlike "Export/Import JSON" above (single teacher) and "Bulk Import All Staff" below
+   (basic info only, for new/blank staff), these two work on the COMPLETE shared
+   database of teacher records (every field, period, promotion, LWP entry, etc. already
+   saved) — meant for taking a full backup or restoring/transferring it to another device. */
+function exportAllTeachersJSON() {
+    const records = getTeacherRecords();
+    const payload = {
+        exportType: 'TFHS_ALL_TEACHERS',
+        exportedAt: new Date().toISOString(),
+        count: Object.keys(records).length,
+        records: records
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TFHS_ROPA_ALL_TEACHERS_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    const status = document.getElementById('dataSaveStatus');
+    if (status) { status.style.color = '#065f46'; status.textContent = `✓ Exported all ${payload.count} teacher record(s) successfully.`; }
+}
+
+function importAllTeachersJSON(event) {
+    if (!isAdmin) {
+        const status = document.getElementById('dataSaveStatus');
+        if (status) { status.style.color = '#b91c1c'; status.textContent = 'Please log in as admin to import all teachers.'; }
+        event.target.value = '';
+        return;
+    }
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            const incoming = (data && typeof data === 'object' && data.records && typeof data.records === 'object') ? data.records : data;
+            if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) {
+                throw new Error('Expected a full "Export All Teachers" JSON file (an object of teacher records).');
+            }
+            const incomingCount = Object.keys(incoming).length;
+            if (!incomingCount) throw new Error('No teacher records found in the file.');
+            const proceed = window.confirm(`This file contains ${incomingCount} teacher record(s). Each will be added to the shared cloud database, or will OVERWRITE the existing record of any teacher with the same name. Continue?`);
+            if (!proceed) { event.target.value = ''; return; }
+            const records = getTeacherRecords();
+            let added = 0, overwritten = 0;
+            Object.keys(incoming).forEach(rawKey => {
+                const rec = incoming[rawKey];
+                const key = teacherRecordKey(rec && rec.staffName ? rec.staffName : rawKey);
+                if (records[key]) overwritten++; else added++;
+                records[key] = rec;
+            });
+            setTeacherRecords(records);
+            refreshTeacherRecordList();
+            const status = document.getElementById('dataSaveStatus');
+            if (status) { status.style.color = '#065f46'; status.textContent = `✓ Import All complete: ${added} new teacher(s) added, ${overwritten} existing teacher(s) overwritten.`; }
+        } catch (err) {
+            const status = document.getElementById('dataSaveStatus');
+            if (status) { status.style.color = '#b91c1c'; status.textContent = 'Import All failed: ' + err.message; }
         } finally { event.target.value = ''; }
     };
     reader.readAsText(file);
